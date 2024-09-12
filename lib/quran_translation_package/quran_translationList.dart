@@ -3,9 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quran_complete_ui/quran_translation_package/quran_translation_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constant.dart';
-import '../reciter_class/reciter_list.dart';
+import '../dropdown_class/translator_list.dart';
 
 class QuranTranslationListPage extends StatefulWidget {
   const QuranTranslationListPage({super.key});
@@ -19,49 +20,61 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
   List<dynamic> quranTranslateData = [];
   final TextEditingController colorController = TextEditingController();
 
-  TranslatorName? selectedReciter;
+  TranslatorName? selectedTranslator;
 
   @override
   void initState() {
     super.initState();
 
-    getQuranTranslationData();
+    // getQuranTranslationData();
+    getQuranText();
   }
 
-  String? _selectedAuthor;
 
-  final List<DropdownMenuItem<String>> _authors = [
-    const DropdownMenuItem(
-      value: 'AhmedAli',
-      child: Text('AhmedAli (en.ahmedali)'),
-    ),
-    const DropdownMenuItem(
-      value: 'Muhiuddin',
-      child: Text('Muhiuddin (bn.bengali)'),
-    ),
-    const DropdownMenuItem(
-      value: 'VasimMammadaliyevandZiyaBunyadov',
-      child: Text('VasimMammadaliyevandZiyaBunyadov (az.mammadaliyev)'),
-    ),
-    const DropdownMenuItem(
-      value: 'Alikhan',
-      child: Text('Alikhan (az.musayev)'),
-    ),
-    const DropdownMenuItem(
-      value: 'Prekled',
-      child: Text('Prekled (cs.hrbek)'),
-    ),
-  ];
 
+
+  //without offline access
   Future<void> getQuranTranslationData() async {
-    final response = await http
-        .get(Uri.parse('https://api.alquran.cloud/v1/quran/en.ahmedali'));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('mainData');
+    if (cachedData != null) {
       setState(() {
-        quranTranslateData = json.decode(response.body)['data']['surahs'];
+        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
       });
-    } else {
-      throw Exception('Failed to load Quran data');
+    }
+  else{
+      final response = await http
+          .get(Uri.parse('https://api.alquran.cloud/v1/quran/en.ahmedali'));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranTranslateData = json.decode(response.body)['data']['surahs'];
+        });
+        await prefs.setString('mainData', response.body);
+      } else {
+        throw Exception('Failed to load Quran data');
+      }
+    }
+  }
+  // with shared pref for offline
+  Future<void> getQuranText() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('translationData');
+
+    if (cachedData != null) {
+      setState(() {
+        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
+      });
+    }
+    else {
+      final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranTranslateData = json.decode(response.body)["data"]["surahs"];
+        });
+        await prefs.setString('translationData', response.body);
+      } else {
+        throw Exception('Failed to load data');
+      }
     }
   }
 
@@ -96,7 +109,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                   width: 300,
                   menuStyle: MenuStyle(
                     backgroundColor:
-                        MaterialStateProperty.all<Color>(gridContainerColor),
+                        WidgetStateProperty.all<Color>(gridContainerColor),
                   ),
                   enableFilter: true,
                   textStyle: TextStyle(color: Colors.amberAccent),
@@ -111,10 +124,11 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                   label: const Text('Select Language/Translator'),
                   onSelected: (TranslatorName? reciter) {
                     setState(() {
-                      selectedReciter = reciter;
+                      selectedTranslator = reciter;
                       //to change the translation
-                      getQuranTranslationReciter(selectedReciter!.text);
+
                     });
+                    getQuranTranslationReciter(selectedTranslator!.text);
                   },
                   dropdownMenuEntries: TranslatorName.values
                       .map<DropdownMenuEntry<TranslatorName>>(

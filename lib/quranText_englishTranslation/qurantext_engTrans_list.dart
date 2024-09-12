@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quran_complete_ui/quranText_englishTranslation/qurantext_engTrans_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constant.dart';
 
@@ -17,27 +18,49 @@ class EngArabicTextSurahListPage extends StatefulWidget {
 
 class _EngArabicTextSurahListPageState extends State<EngArabicTextSurahListPage> {
   List<dynamic> quranText = [];
-  List<dynamic> translationQuranText = [];
+  List<dynamic> translationQuranEngText = [];
 
   Future<void> getQuranTextOnly() async {
-    final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('quranData');
+    if (cachedData != null) {
       setState(() {
-        quranText = json.decode(response.body)["data"]["surahs"];
+        quranText  = json.decode(cachedData)["data"]["surahs"];
       });
-    } else {
-      throw Exception('Failed to load data');
     }
+    else{
+      final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranText = json.decode(response.body)["data"]["surahs"];
+        });
+        await prefs.setString('translatedData', response.body);
+      } else {
+        throw Exception('Failed to load data');
+      }
+    }
+
   }
   Future<void> getQuranTransOnly() async {
-    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/en.ahmedali'));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('englishData');
+    if (cachedData != null) {
       setState(() {
-        translationQuranText= json.decode(response.body)["data"]["surahs"];
+        translationQuranEngText  = json.decode(cachedData)["data"]["surahs"];
       });
-    } else {
-      throw Exception('Failed to load Quran data');
     }
+    else{
+      final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/en.ahmedali'));
+      if (response.statusCode == 200) {
+        setState(() {
+          translationQuranEngText= json.decode(response.body)['data']['surahs'];
+        });
+        await prefs.setString('englishData', response.body);
+      } else {
+        throw Exception('Failed to load Quran data');
+      }
+    }
+
   }
 
   @override
@@ -63,7 +86,7 @@ class _EngArabicTextSurahListPageState extends State<EngArabicTextSurahListPage>
 
           itemBuilder: (context, index) {
             final uthmanisurah = quranText[index];
-            final translationDta=translationQuranText[index];
+            final translationDta=translationQuranEngText[index];
             return Card(
               color: gridContainerColor,
               child: ListTile(

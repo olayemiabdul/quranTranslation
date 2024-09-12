@@ -36,7 +36,7 @@ class _EngArabicTextPageState extends State<EngArabicTextPage> {
           final ayah = widget.ayahs[index];
           final translated=widget.ayahstext[index];
           return Card(
-            color:gridContainerColor ,
+            color:Colors.white ,
             child: ListTile(
               title: Column(
                 children: [
@@ -48,12 +48,17 @@ class _EngArabicTextPageState extends State<EngArabicTextPage> {
                     style: const TextStyle(
 
                         fontFamily: 'Kitab-Bold',
-                        color: Colors.white,
-                        fontSize: 30),
+                        color: Colors.black,
+                        fontSize: 18),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 90),
-                    child: Text(translated['text'], textAlign: TextAlign.left,),
+                    child: Text(translated['text'], textAlign: TextAlign.left,
+                      style: const TextStyle(
+
+                          fontFamily: 'Kitab-Bold',
+                          color: Colors.black,
+                          fontSize: 18),),
                   ),
                 ],
               ),

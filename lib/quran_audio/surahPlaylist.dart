@@ -100,10 +100,15 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:quran_complete_ui/constant.dart';
+import 'package:quran_complete_ui/dropdown_class/reciter_list.dart';
+
 import 'package:quran_complete_ui/quran_audio/reciterpage.dart';
-import 'package:quran_complete_ui/reciter_class/reciter_list.dart';
+
+
+
 
 import '../model/Audio_model.dart';
+import 'audio_player.dart';
 
 
 
@@ -121,84 +126,116 @@ class _AudioSurahListState extends State<AudioSurahList> {
   late AudioPlayer audioPlayer;
   TextEditingController reciterController=TextEditingController();
   ReciterName? selectedReciter;
+  DateTime selectedDate = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     getAudioReciterList();
-    audioPlayer = AudioPlayer();
+
+    //audioPlayer = AudioPlayer();
   }
 
   Future<void> getAudioReciterList() async {
-    const String url='https://api.alquran.cloud/v1/quran/ar.alafasy';
-    final response = await http.get(
-        Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data']['surahs'] as List;
-      setState(() {
-        audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
-      });
-    } else {
-      throw Exception('Failed to load');
-    }
+
+
+
+      const String url='https://api.alquran.cloud/v1/quran/ar.alafasy';
+      final response = await http.get(
+          Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['data']['surahs'] as List;
+        setState(() {
+          audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
+        });
+
+      } else {
+        throw Exception('Failed to load');
+      }
+
   }
-  Future<void> getAudioSurahList(String reciter) async {
-     String url='https://api.alquran.cloud/v1/quran/$reciter';
-    final response = await http.get(
-        Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data']['surahs'] as List;
-      setState(() {
-        audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
-      });
-    } else {
-      throw Exception('Failed to load');
-    }
+  Future<void> getAudioSurahList(String reciter, String ayahNumber) async {
+
+
+      String url='https://api.alquran.cloud/v1/quran/$reciter??ar.alafasy/$ayahNumber.mp3';
+      final response = await http.get(
+          Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['data']['surahs'] as List;
+        setState(() {
+          audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
+        });
+
+      } else {
+        throw Exception('Failed to load');
+      }
+
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: gridContainerColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: const BackButton(
+
+        ),
         title: const Text('Audio Quran'),
       ),
       body: Column(
         children: [
           const SizedBox(height: 30,),
-          DropdownMenu<ReciterName >(
-            //initialSelection: ReciterName.alminshawi,
-            controller: reciterController,
-            requestFocusOnTap: true,
-            width: 300,
-            menuStyle: MenuStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(
-                  gridContainerColor),
-            ),
-            enableFilter: true,
-            textStyle: TextStyle(color: Colors.amberAccent),
-            enableSearch: true,
-            label: const Text('Select Reciter'),
-            onSelected: (ReciterName? reciter) {
-              setState(() {
-                selectedReciter = reciter ;
-                //to change the translation
-                getAudioSurahList(reciterController.text);
-              });
-            },
-            dropdownMenuEntries: ReciterName.values
-                .map<DropdownMenuEntry<ReciterName>>(
-                    (ReciterName reciter) {
-                  return DropdownMenuEntry<ReciterName>(
-                    value: reciter,
-                    label: reciter.label.toString(),
-                    enabled: reciter.label != 'Grey',
-                    style: MenuItemButton.styleFrom(
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(height: 60,
+              child: ListView.builder(
+                itemCount: 1,
 
+                itemBuilder: (BuildContext context, int index) {
+                  return   DropdownMenu<ReciterName >(
+                    initialSelection: ReciterName.alminshawi,
+                    controller: reciterController,
+                    requestFocusOnTap: true,
+                    width: 300,
+                    menuStyle: MenuStyle(
+                      backgroundColor: WidgetStateProperty.all<Color>(
+                          gridContainerColor),
                     ),
+                    enableFilter: true,
+                    textStyle: const TextStyle(color: Colors.amberAccent),
+                    enableSearch: true,
+                    label: const Text('Select Language/Reciter'),
+                    onSelected: (ReciterName? reciter) {
+                      setState(() {
+                        selectedReciter = reciter ;
+
+
+                      });
+                      //to change the reciter
+                      final myAudioSurah = audioSurahs[index].ayahs[index].audio;
+                      getAudioSurahList(selectedReciter!.text,myAudioSurah.toString());
+                    },
+                    dropdownMenuEntries: ReciterName.values
+                        .map<DropdownMenuEntry<ReciterName>>(
+                            (ReciterName reciter) {
+                          return DropdownMenuEntry<ReciterName>(
+                            value: reciter,
+                            label: reciter.label.toString(),
+                            enabled: reciter.label != 'Grey',
+                            style: MenuItemButton.styleFrom(
+
+                            ),
+                          );
+                        }).toList(),
                   );
-                }).toList(),
+                },
+
+              ),
+            ),
           ),
+        const  SizedBox(height: 5,),
           Expanded(
 
             child: ListView.builder(
@@ -211,7 +248,7 @@ class _AudioSurahListState extends State<AudioSurahList> {
                   subtitle: Text(myAudioSurah.name),
                   trailing: Container(
                     decoration:  BoxDecoration(
-                     // color: Colors.green,
+                      // color: Colors.green,
 
                       borderRadius: BorderRadius.circular(30),
                       //color:gridContainerColor,
@@ -242,4 +279,3 @@ class _AudioSurahListState extends State<AudioSurahList> {
     super.dispose();
   }
 }
-

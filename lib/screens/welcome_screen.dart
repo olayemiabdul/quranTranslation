@@ -1,15 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:geolocator/geolocator.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:pray_times/pray_times.dart';
 import 'package:quran_complete_ui/constant.dart';
-import 'package:quran_complete_ui/quran_text_package/quran_surahList.dart';
 
-import '../location_logic/location_class.dart';
+
+import '../azan/notification_class.dart';
 import '../quran_text_package/quran_text_mainscreen.dart';
 import '../quran_translation_package/quran_translation_mainscreen.dart';
 

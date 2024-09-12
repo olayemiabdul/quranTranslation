@@ -1,17 +1,32 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+
 import 'firebase_options.dart';
 import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_settings_screens/flutter_settings_screens.dart';
+
 
 
 
 import 'package:quran_complete_ui/widget/widget_data.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -20,17 +35,7 @@ void main() async{
     runApp(const CompleteQuranApp());
 
 }
-Future<void> initSettings() async {
-  await Settings.init(
-    //cacheProvider: _isUsingHive ? HiveCache() : SharePreferenceCache(),
-  );
-  var accentColor = ValueNotifier(Colors.blueAccent);
-}
 
-class HiveCache {}
-
-bool _isDarkTheme = true;
-bool _isUsingHive = true;
 class CompleteQuranApp extends StatelessWidget {
   const CompleteQuranApp({super.key});
 
@@ -38,14 +43,14 @@ class CompleteQuranApp extends StatelessWidget {
   Widget build(BuildContext context) {
 
 
-      return MaterialApp(
+      return  MaterialApp(
         debugShowCheckedModeBanner: false,
         //color: backGroundColor,
         theme: ThemeData(
           brightness: Brightness.dark,
       
         ),
-        home: ShowUpAnimation(child: const CoverPageDetail(),),
+        home: ShowUpAnimation(child: const CoverPageDetail()),
       );
   }
 }

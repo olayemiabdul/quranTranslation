@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quran_complete_ui/quranText_UrduTranslation/quran_text_UrduTranslation.dart';
 import 'package:quran_complete_ui/quranText_englishTranslation/qurantext_engTrans_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constant.dart';
 
@@ -17,27 +18,48 @@ class UrduArabicTextSurahListPage extends StatefulWidget {
 }
 
 class _UrduArabicTextSurahListPageState extends State<UrduArabicTextSurahListPage> {
-  List<dynamic> quranText = [];
-  List<dynamic> translationQuranText = [];
+  List<dynamic> quranTextUrdu = [];
+  List<dynamic> translationQuranTexturdu = [];
 
   Future<void> getQuranTextOnly() async {
-    final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('aData');
+    if (cachedData != null) {
       setState(() {
-        quranText = json.decode(response.body)["data"]["surahs"];
+      quranTextUrdu= json.decode(cachedData)['data']['surahs'];
       });
-    } else {
-      throw Exception('Failed to load data');
     }
+    else{
+      final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranTextUrdu = json.decode(response.body)['data']['surahs'];
+        });
+        await prefs.setString('aData', response.body);
+      } else {
+        throw Exception('Failed to load data');
+      }
+    }
+
   }
   Future<void> getQuranTransOnly() async {
-    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/ur.ahmedali'));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('urduData');
+    if (cachedData != null) {
       setState(() {
-        translationQuranText= json.decode(response.body)['data']['surahs'];
+        translationQuranTexturdu= json.decode(cachedData)['data']['surahs'];
       });
-    } else {
-      throw Exception('Failed to load Quran data');
+    }
+    else{
+      final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/ur.ahmedali'));
+      if (response.statusCode == 200) {
+        setState(() {
+          translationQuranTexturdu= json.decode(response.body)['data']['surahs'];
+        });
+        await prefs.setString('urduData', response.body);
+      } else {
+        throw Exception('Failed to load Quran data');
+      }
     }
   }
 
@@ -57,22 +79,23 @@ class _UrduArabicTextSurahListPageState extends State<UrduArabicTextSurahListPag
           backgroundColor: gridContainerColor,
           title: const Text('Urdu-Quran'),
         ),
-        body: quranText.isEmpty
+        body: quranTextUrdu.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : ListView.builder(
-          itemCount: quranText.length,
+          itemCount: quranTextUrdu.length,
 
           itemBuilder: (context, index) {
-            final uthmanisurah = quranText[index];
-            final translationDta=translationQuranText[index];
+            final uthmanisurah = quranTextUrdu[index];
+            final translationData=translationQuranTexturdu[index];
             return Card(
+
               color: gridContainerColor,
               child: ListTile(
 
 
-                title: Text('Surah ${quranText[index]["number"]}: ${quranText[index]["englishName"]}'),
-                subtitle: Text(' ${quranText[index]["ayahs"].length} Verses-${quranText[index]['revelationType']}'),
-                trailing: Text('${quranText[index]['name']}-${quranText[index]['englishNameTranslation']}'),
+                title: Text('Surah ${quranTextUrdu[index]["number"]}: ${quranTextUrdu[index]["englishName"]}'),
+                subtitle: Text(' ${quranTextUrdu[index]["ayahs"].length} Verses-${quranTextUrdu[index]['revelationType']}'),
+                trailing: Text('${quranTextUrdu[index]['name']}-${quranTextUrdu[index]['englishNameTranslation']}'),
                 leading: Container(
                   alignment: Alignment.center,
                   height: 30,
@@ -82,7 +105,7 @@ class _UrduArabicTextSurahListPageState extends State<UrduArabicTextSurahListPag
                     color: gridContainerColor,
                   ),
                   child: Text(
-                    quranText[index]['number'].toString(),
+                    quranTextUrdu[index]['number'].toString(),
                     style: const TextStyle(
                         fontSize: 16,
                         color: Colors.white,
@@ -93,7 +116,7 @@ class _UrduArabicTextSurahListPageState extends State<UrduArabicTextSurahListPag
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>  UrduArabicTextPage(ayahs: uthmanisurah['ayahs'], ayahstext: translationDta ['ayahs'], surahEnglishName: uthmanisurah['englishName'], numberInSurah: uthmanisurah['ayahs'], surahEnglishNameT: uthmanisurah['englishName'], numberInSurahT: uthmanisurah['ayahs'],  ),
+                      builder: (context) =>  UrduArabicTextPage(ayahs: uthmanisurah['ayahs'], ayahstext: translationData ['ayahs'], surahEnglishName: uthmanisurah['englishName'], numberInSurah: uthmanisurah['ayahs'], surahEnglishNameT: uthmanisurah['englishName'], numberInSurahT: uthmanisurah['ayahs'],  ),
                     ),
                   );
                 },
@@ -101,18 +124,7 @@ class _UrduArabicTextSurahListPageState extends State<UrduArabicTextSurahListPag
             );
 
 
-            // return ListTile(
-            //   onTap: () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(
-            //         builder: (context) => UthmaniDetailPage ( ayahs: uthmanisurah['ayahs'], ayahstext:translationDta ['ayahs'],),
-            //       ),
-            //     );
-            //   },
-            //   title: Text('Surah ${quranText[index]["number"]}: ${quranText[index]["name"]}'),
-            //   subtitle: Text('Ayahs: ${quranText[index]["ayahs"].length}'),
-            // );
+
           },
         ),
       );

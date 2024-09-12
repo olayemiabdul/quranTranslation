@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,26 +10,30 @@ import '../widget/contact_us_wideget.dart';
 class SettingsPageScreen extends StatelessWidget {
   const SettingsPageScreen({super.key});
 
-  privacyPolicy(BuildContext context)async {
-const url='https://doc-hosting.flycricket.io/universal-quran-privacy-policy/898af9c7-316f-442b-be86-3b1fc773f490/privacy';
-if (await canLaunch(url)) {
-    await launch(url);
+
+
+  Future<void> privacyPolicy() async {
+    final Uri url = Uri.parse('https://doc-hosting.flycricket.io/universal-quran-privacy-policy/898af9c7-316f-442b-be86-3b1fc773f490/privacy');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication); // Ensures it opens in a browser
     } else {
-    throw 'Could not launch $url';
+      throw 'Could not launch $url';
     }
   }
 
   Future<void> termsOfService(BuildContext context) async {
-    const url='https://doc-hosting.flycricket.io/universal-quran-terms-of-use/eecb3614-fa91-4a97-b04a-11f9044fa2b1/terms';
-    if (await canLaunch(url)) {
-    await launch(url);
+    final Uri url = Uri.parse('https://doc-hosting.flycricket.io/universal-quran-terms-of-use/eecb3614-fa91-4a97-b04a-11f9044fa2b1/terms');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication); // Ensures it opens in a browser
     } else {
-    throw 'Could not launch $url';
+      throw 'Could not launch $url';
     }
   }
 
+
+
   rateUs() async {
-    const url = 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'; // Replace with your app's Play Store URL
+    const url = 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'; //  app's Play Store URL
     if (await canLaunch(url)) {
       await launch(url);
     } else {
@@ -46,7 +49,7 @@ if (await canLaunch(url)) {
   }
 
   shareApp(BuildContext context) {
-    Share.share('Check out this amazing app: https://play.google.com/store/apps/details?id=com.example.yourapp', // Replace with your app's Play Store URL
+    Share.share('https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
         subject: 'Share Our App');
   }
 
@@ -91,7 +94,7 @@ if (await canLaunch(url)) {
         children: [
           ListTile(
             title: const Text('Privacy Policy'),
-            onTap: () => privacyPolicy(context),
+            onTap: () => privacyPolicy(),
           ),
           ListTile(
             title: const Text('Terms of Service'),

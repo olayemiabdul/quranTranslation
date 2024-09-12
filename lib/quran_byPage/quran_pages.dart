@@ -5,9 +5,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quran_complete_ui/quran_translation_package/quran_translation_text.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constant.dart';
-import '../reciter_class/reciter_list.dart';
+import '../dropdown_class/translator_list.dart';
+
 
 class QuranByPages extends StatefulWidget {
   const QuranByPages({super.key});
@@ -34,15 +36,26 @@ class _QuranByPagesState extends State<QuranByPages> {
   }
 
   Future<void> getQuranTranslationData() async {
-    final response = await http
-        .get(Uri.parse('https://api.alquran.cloud/v1/page/1/quran-uthmani'));
-    if (response.statusCode == 200) {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('quranPageData');
+    if (cachedData != null) {
       setState(() {
-        quranTranslateData = json.decode(response.body)['data']['ayahs'];
+        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
       });
-    } else {
-      throw Exception('Failed to load Quran data');
+    }else{
+      final response = await http
+          .get(Uri.parse('https://api.alquran.cloud/v1/page/1/quran-uthmani'));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranTranslateData = json.decode(response.body)['data']['ayahs'];
+        });
+        await prefs.setString('translatedData', response.body);
+      } else {
+        throw Exception('Failed to load Quran data');
+      }
     }
+
+
   }
 
   Future<void> getQuranTranslationReciter(int pageNumber) async {
@@ -179,16 +192,16 @@ class _QuranByPagesState extends State<QuranByPages> {
                       //final utmaniayah=quranData[index]
 
                       return Card(
-                        color: gridContainerColor,
+                        color: Colors.white,
                         child: ListTile(
                           title: Text(translatedtext["text"] ,  style: const TextStyle(
                               //wordSpacing: 2,
 
 
                               fontFamily: 'Kitab-Bold',
-                              color: Colors.white,
-                              fontWeight: FontWeight.normal,
-                              fontSize: 30),
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18),
                               textAlign: TextAlign.right,),
 
                           leading:   Container(

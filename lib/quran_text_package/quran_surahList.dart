@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:quran_complete_ui/constant.dart';
 import 'package:quran_complete_ui/quran_text_package/quran_ayahText.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class QuranTextPage extends StatefulWidget {
   const QuranTextPage({super.key});
@@ -15,23 +16,35 @@ class QuranTextPage extends StatefulWidget {
 class _QuranTextPageState extends State<QuranTextPage> {
   List<dynamic> quranData = [];
 
-  Future<void> getQuranTextData() async {
-    final response = await http
-        .get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
-    if (response.statusCode == 200) {
+
+
+  Future<void> getQuranText() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? cachedData = prefs.getString('quranData');
+
+    if (cachedData != null) {
       setState(() {
-        quranData = json.decode(response.body)["data"]["surahs"];
+        quranData = json.decode(cachedData)["data"]["surahs"];
       });
-    } else {
-      throw Exception('Failed to load data');
+    }
+    else {
+      final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
+      if (response.statusCode == 200) {
+        setState(() {
+          quranData = json.decode(response.body)["data"]["surahs"];
+        });
+        await prefs.setString('quranData', response.body);
+      } else {
+        throw Exception('Failed to load data');
+      }
     }
   }
-
   @override
   void initState() {
     super.initState();
 
-    getQuranTextData();
+    //getQuranTextData();
+    getQuranText();
   }
 
   @override

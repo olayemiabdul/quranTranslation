@@ -1,18 +1,18 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:geocode/geocode.dart';
+
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:pray_times/pray_times.dart';
+
 import 'package:share_plus/share_plus.dart';
+
 
 import '../constant.dart';
 import '../hajj_adkar/hajj_screen.dart';
-import '../hajj_adkar/hajj_widget.dart';
-import '../location_logic/location_class.dart';
+
 import '../model/cover_page_model.dart';
 
 import '../quranText_UrduTranslation/quran_text_urdu_list.dart';
@@ -28,7 +28,7 @@ import '../quran_translation_package/quran_translationList.dart';
 import '../hajj_adkar/adhkar.dart';
 
 
-import '../setting/newQuran.dart';
+
 import '../azan/prayerTime.dart';
 
 import '../setting/settings_screen.dart';
@@ -79,52 +79,74 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
     } else if (index == 7) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const PrayerTimePage()),
+        MaterialPageRoute(builder: (context) =>  const PrayerTimePage()),
       );
     } else if (index == 8) {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) =>  const HajjPage ()),
+            builder: (context) =>   const HajjPage ()),
       );
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const AudioSurahList()),
+        MaterialPageRoute(builder: (context) => const AudioSurahList ()),
       );
     }
     // navigate to two
   }
 
-  var today = HijriCalendar.now(); // for hijri date
-  DateTime selectedDate = DateTime.now(); //flutter date
+  var today = HijriCalendar.now();
+ // for hijri date
+
+ var selectedDate = DateTime.timestamp().toLocal(); //flutter date
+  late Timer _timer;
+  String formattedTime = '';
+  bool exactAlarmEnabled = false;
 
   shareApp(BuildContext context) {
-    Share.share('Check out this amazing app: https://play.google.com/store/apps/details?id=com.example.yourapp', // Replace with your app's Play Store URL
+    Share.share('Check out this amazing app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
         subject: 'Share Our App');
   }
+  void updateTime() {
+    setState(() {
+      selectedDate.hour -selectedDate.minute;
+    });
+  }
 
+  @override
+  void initState() {
+    super.initState();
+    getCurrentTime();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      getCurrentTime();
+    });
+  }
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void getCurrentTime() {
+    final now = DateTime.now();
+    final formatter = DateFormat('kk:mm:ss');
+    setState(() {
+      formattedTime = formatter.format(now);
+    });
+  }
 
 
   @override
   Widget build(BuildContext context) {
 
 
-    // //PrayerTimes prayers = PrayerTimes();
-    // prayers.setTimeFormat(prayers.Time24);
-    // prayers.setCalcMethod(prayers.MWL);
-    // prayers.setAsrJuristic(prayers.Shafii);
-    // prayers.setAdjustHighLats(prayers.AngleBased);
-    // var offsets = [0, 0, 0, 0, 0, 0, 0];
-    // int width = 10;
-    // int height = 15;
-    // prayers.tune(offsets);
     QuranCover reading = QuranCover();
     var overlayController=OverlayPortalController();
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Al-Quran'),
+        title: const Text('Al-Quran'),
         actions: [
 
           PopupMenuButton(
@@ -146,19 +168,19 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                             borderRadius: BorderRadius.all(Radius.circular(10))
                         ),
                         //color: Colors.green,
-                        height: 330,
+                        height: 320,
                         width: 300,
                         child:  const Column(
                           children: [
                             // const SizedBox(height: 140,),
                             Padding(
                               padding: EdgeInsets.all(8.0),
-                              child: Text('Welcome Tuned Jobs\nGrab your next desired dream Job here',
+                              child: Text('Universal Quran\nQuran in major Languages of the world',
                                 style: TextStyle(color: Colors.white),),
                             ),
                             Image(image: AssetImage('assets/images/overlay.png', ), height: 180,width: 260,),
                             SizedBox(height: 2,),
-                            Text('Version 1.0.1\nDeveloper:olayemi.abdullahi@gmail.com\n07407208778')
+                            Text('Version 1.0.1\nDeveloper:universalquran24@gmail.com\nMay Allah SWT forgive my parent & all Muslims', style: TextStyle(color: Colors.white))
                           ],
                         ),
                       ),
@@ -179,17 +201,9 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                   }, child: const Text('Settings'),)
               ),
               PopupMenuItem(
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        shareApp(context);
-                      },
-                      icon: const Icon(Icons.share),
-                    ),
-                    const Text('share'),
-                  ],
-                ),
+                child:  ElevatedButton(onPressed: () {
+                  shareApp(context);
+                }, child: const Icon(Icons.share,size: 30,)),
               ),
             ],
           ),
@@ -221,10 +235,11 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
               dimension: 80,
             ),
 
-            // Expanded(child: PrayerTimePage()),
+
+
             Center(
               child: Text(
-                "${selectedDate.hour} : ${selectedDate.minute} ",
+                 formattedTime,
                 style: GoogleFonts.allura(
                   textStyle: TextStyle(
                       color: Colors.blue.shade100,
