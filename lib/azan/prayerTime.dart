@@ -43,6 +43,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
   String date = DateTime.now().toIso8601String().split('T')[0];
   String notificationMode = 'Beep'; // Default to 'Beep' to choose azan notification
   int selectedCalculationMethod = 3; // Default to Muslim World League
+  bool isNotificationInitialized = false;
 
 
 
@@ -125,10 +126,12 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         .then((List<Placemark> placemarks) {
       Placemark place = placemarks[0];
       setState(() {
+
         currentAddress = '${place.subLocality ?? ''}, ${place.subAdministrativeArea ?? ''}, ${place.postalCode ?? ''}';
-        currentCity = place.locality;
+        currentCity = place.subAdministrativeArea;
         currentCountry = place.country;
         print(currentCity);
+        print(currentCountry);
         getPrayerTimes();  // Fetch prayer times once city and country are obtained
       });
     }).catchError((e) {
@@ -145,6 +148,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     String date = DateTime.now().toIso8601String().split('T')[0]; // Today's date
     // int month=selectedDate.month;
     // int year=selectedDate.year;
+    print(date);
 
 
 
@@ -155,6 +159,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       print(currentCity);
+      print(currentCountry);
       return PrayerDailyTimes.fromJson(data['data']['timings']);
 
     } else {
@@ -169,69 +174,111 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
 
 
 
-  static Future<void> initialized (FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async{
-    var andriodInitialize=const AndroidInitializationSettings('mipmap/ic_launcher');
-    //var iOSInitialize=new IOSInitializationSettings();
-    var initializationSettings=InitializationSettings(
-      android: andriodInitialize,
+  Future<void> initializeNotifications() async {
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidSettings);
 
+    await flutterLocalNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap
+        debugPrint('Notification tapped: ${response.payload}');
+      },
     );
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
+    isNotificationInitialized = true;
   }
-
 
 
   Future<void> scheduleAzanNotification(
       String prayerName,
-      DateTime prayerTime,
-      {required bool sound, required bool vibrate}) async {
+      DateTime prayerTime, {
+        required bool sound,
+        required bool vibrate,
+      }) async {
+    if (!isNotificationInitialized) return;
 
     final int notificationId = prayerName.hashCode;
 
-    NotificationDetails notificationDetails = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'azan_channel_id',
-        'Azan Notifications',
-        channelDescription: 'Notification channel for Azan timings',
-        importance: Importance.max,
-        priority: Priority.high,
-        sound: sound ? RawResourceAndroidNotificationSound('azan') : null,
-        enableVibration: vibrate,
-        playSound: sound,
-      ),
-    );
+    // Convert prayer time to TZDateTime
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      notificationId,
-      '$prayerName',
-      'It is time for $prayerName prayer',
-      tz.TZDateTime.from(prayerTime, tz.local),
-      notificationDetails,
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    // Only schedule if the prayer time hasn't passed
+    if (scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
+      try {
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+          notificationId,
+          'Prayer Time',
+          'It is time for $prayerName prayer',
+          scheduledDate,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              'prayer_channel',
+              'Prayer Times',
+              channelDescription: 'Notifications for prayer times',
+              importance: Importance.max,
+              priority: Priority.high,
+              sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
+              playSound: sound,
+              enableVibration: vibrate,
+              category: AndroidNotificationCategory.alarm,
+              fullScreenIntent: true,
+              visibility: NotificationVisibility.public,
+            ),
+          ),
+          androidAllowWhileIdle: true,
+          uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
 
-    print('Notification scheduled for $prayerName at $prayerTime with sound: $sound, vibrate: $vibrate');
+        print('Scheduled notification for $prayerName at $scheduledDate');
+      } catch (e) {
+        print('Error scheduling notification: $e');
+      }
+    }
   }
 
 
-  Future<void> setNotificationModePreference(String mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('notification_mode', mode);
-  }
-
-  Future<String> getNotificationModePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('notification_mode') ?? 'Beep';
-  }
-  Future<void> loadNotificationModePreference() async {
-    notificationMode = await getNotificationModePreference();
-    setState(() {});
-  }
 
 
+
+  Future<void> schedulePrayerNotifications(PrayerDailyTimes prayerTimes) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Map of prayer times
+    final prayerMap = {
+      'Fajr': prayerTimes.fajr,
+      'Dhuhr': prayerTimes.dhuhr,
+      'Asr': prayerTimes.asr,
+      'Maghrib': prayerTimes.maghrib,
+      'Isha': prayerTimes.isha,
+    };
+
+    // Schedule notifications for each prayer time
+    prayerMap.forEach((name, timeStr) {
+      try {
+        final List<String> timeParts = timeStr.split(':');
+        final prayerDateTime = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          int.parse(timeParts[0]),
+          int.parse(timeParts[1]),
+        );
+
+        scheduleAzanNotification(
+          name,
+          prayerDateTime,
+          sound: notificationMode == 'sound',
+          vibrate: notificationMode == 'vibrate',
+        );
+      } catch (e) {
+        print('Error scheduling $name notification: $e');
+      }
+    });
+  }
 
 
   Widget buildPrayerTile(String prayerName, String prayerTime, BuildContext context) {
@@ -262,29 +309,31 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
             notificationMode = value;
           });
 
-          // Parse the prayerTime string to DateTime object
-          DateTime now = DateTime.now();
-          DateTime prayerDateTime = DateTime.parse(
-            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} $prayerTime:00',
+          // Parse prayer time
+          final List<String> timeParts = prayerTime.split(':');
+          final now = DateTime.now();
+          final prayerDateTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            int.parse(timeParts[0]),
+            int.parse(timeParts[1]),
           );
 
-          // Schedule the notification based on the selected mode
-          switch (notificationMode) {
-            case 'sound':
-              await scheduleAzanNotification(prayerName, prayerDateTime, sound: true, vibrate: false);
-              break;
-            case 'vibrate':
-              await scheduleAzanNotification(prayerName, prayerDateTime, sound: false, vibrate: true);
-              break;
-            case 'mute':
-              await scheduleAzanNotification(prayerName, prayerDateTime, sound: false, vibrate: false);
-              break;
-          }
+          // Schedule notification with selected mode
+          await scheduleAzanNotification(
+            prayerName,
+            prayerDateTime,
+            sound: value == 'sound',
+            vibrate: value == 'vibrate',
+          );
 
-          // Optional: Provide feedback to the user
+          // Save preference
+          await setNotificationModePreference(value);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Notification scheduled for $prayerName at $prayerTime ($notificationMode)'),
+              content: Text('$prayerName notification set to $value mode'),
             ),
           );
         },
@@ -301,6 +350,26 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
   }
 
 
+  Future<void> setNotificationModePreference(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('notification_mode', mode);
+  }
+
+  Future<String> getNotificationModePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('notification_mode') ?? 'Beep';
+  }
+  Future<void> loadNotificationModePreference() async {
+    notificationMode = await getNotificationModePreference();
+    setState(() {});
+  }
+
+
+
+
+
+
+
 
 
 
@@ -314,12 +383,10 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     super.initState();
 
 
-    initialized(flutterLocalNotificationsPlugin);
+    initializeNotifications();
     getCurrentPosition();
-    getPrayerTimes();
     loadNotificationModePreference();
     tz.initializeTimeZones();
-
     }
 
   @override
@@ -359,70 +426,74 @@ backgroundColor: gridContainerColor,
 
 
 
-
-
           Expanded(
-
             child: FutureBuilder<PrayerDailyTimes>(
-                future:getPrayerTimes(),
-                builder: ( context,snapshot){
+              future: getPrayerTimes(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final prayerTimes = snapshot.data!;
+                  // Schedule notifications when prayer times are loaded
+                  schedulePrayerNotifications(prayerTimes);
 
-                  if(snapshot.hasData){
-                    return ListView.builder(
-                        itemCount: 1,
-                        itemBuilder: (context, index){
-                          final prayerTimes=snapshot.data;
-
-                          return
-                            Card(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  buildPrayerTile('Fajr', prayerTimes!.fajr, context),
-                                  const SizedBox(height: 7,),
-                                  buildPrayerTile('Sunrise', prayerTimes.sunrise, context),
-                                  buildPrayerTile('Dhuhr', prayerTimes.dhuhr, context),
-                                  buildPrayerTile('Asr', prayerTimes.asr, context),
-                                  buildPrayerTile('Maghrib', prayerTimes.maghrib, context),
-                                  buildPrayerTile('Sunset', prayerTimes.sunset, context),
-                                 buildPrayerTile('Isha', prayerTimes.isha, context),
-                                 buildPrayerTile('Midnight', prayerTimes.midnight, context),
-                                ],
-
-                              ),
-                            );
-
-                        });
-                  } else{
-                    return const Text('Check your Connection');
-                  }
-
-
+                  return ListView(
+                    children: [
+                      Card(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildPrayerTile('Fajr', prayerTimes.fajr, context),
+                            const SizedBox(height: 7),
+                            buildPrayerTile('Sunrise', prayerTimes.sunrise, context),
+                            buildPrayerTile('Dhuhr', prayerTimes.dhuhr, context),
+                            buildPrayerTile('Asr', prayerTimes.asr, context),
+                            buildPrayerTile('Maghrib', prayerTimes.maghrib, context),
+                            buildPrayerTile('Sunset', prayerTimes.sunset, context),
+                            buildPrayerTile('Isha', prayerTimes.isha, context),
+                            buildPrayerTile('Midnight', prayerTimes.midnight, context),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  return const Center(
+                    child: Text(
+                      'Check your Connection',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  );
                 }
-                ),
+              },
+            ),
           ),
+
           const Padding(
             padding: EdgeInsets.all(8.0),
             child: Align(
-                alignment: Alignment.topLeft,
-                child: Text('Change Calculation Method')),
+              alignment: Alignment.topLeft,
+              child: Text(
+                'Change Calculation Method',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
           ),
           DropdownButton<int>(
             focusColor: gridContainerColor,
-            hint: const Text('calculation method'),
-
+            dropdownColor: gridContainerColor,
             value: selectedCalculationMethod,
             onChanged: (int? newValue) {
               setState(() {
                 selectedCalculationMethod = newValue!;
-                getPrayerTimes(); // Fetch new prayer times when method changes
+                getPrayerTimes();
               });
             },
             items: calculationMethods.entries.map((entry) {
               return DropdownMenuItem<int>(
-
                 value: entry.value,
-                child: Text(entry.key),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(color: Colors.white),
+                ),
               );
             }).toList(),
           ),
