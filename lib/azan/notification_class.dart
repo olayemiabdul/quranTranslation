@@ -1,91 +1,141 @@
-// import 'package:geolocator/geolocator.dart';
-// import 'package:geocoding/geocoding.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-//
-// class NotificationClass{
-//   static Future<void> initialized (FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin) async{
-//   var andriodInitialize=const AndroidInitializationSettings('app_icon');
-//   //var iOSInitialize=new IOSInitializationSettings();
-//     var initializationSettings=InitializationSettings(
-//       android: andriodInitialize,
-//
-//     );
-//     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-//
-//   }
-//   static Future scheduleAzanNotification({var id =0, required String title, required String textBody,
-//   var payload,required FlutterLocalNotificationsPlugin fln}) async {
-//     // bool soundEnabled = await getSoundPreference();
-//
-//     AndroidNotificationDetails andriod =  AndroidNotificationDetails(
-//       'azan_channel_id',
-//       'Azan Notifications',
-//       channelDescription: 'Notification channel for Azan timings',
-//       importance: Importance.max,
-//       priority: Priority.high,
-//       sound: RawResourceAndroidNotificationSound('azan'),
-//       playSound: true,
-//     );
-//     var notificatClass=NotificationDetails(android:andriod, );
-//
-//     //NotificationDetails not = NotificationDetails(android: androidNotificationDetails);
-//
-//     await fln.show(0,title,textBody,notificatClass
-//       // 0,
-//       // '$prayerName Time',
-//       // 'It is time for $prayerName prayer',
-//       // tz.TZDateTime.from(prayerTime, tz.local),
-//       // notificationDetails,
-//       // androidAllowWhileIdle: true,
-//       // uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
-//       // matchDateTimeComponents: DateTimeComponents.time,
-//     );
-//   }
-//
-//
-// }
-//
-//
+
+
+import 'dart:io' show Platform;
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart'; // Updated import
+import 'package:permission_handler/permission_handler.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-class NotificationService {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+class NotificationApi {
+  static final _notifications = FlutterLocalNotificationsPlugin();
+  static final onSelectNotifications = BehaviorSubject<String?>();
 
-  NotificationService() {
-    // Initialize the timezone package
+  static Future init({bool initScheduled = false}) async {
     tz.initializeTimeZones();
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iOS = DarwinInitializationSettings();
+    const settings = InitializationSettings(android: android, iOS: iOS);
 
-    final AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('mipmap/ic_launcher');
-    final InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (payload) async {
+        onSelectNotifications.add(payload.payload);
+      },
+    );
+
+    if (initScheduled) {
+      tz.initializeTimeZones();
+      final locationName = await FlutterTimezone.getLocalTimezone(); // Updated method
+      tz.setLocalLocation(tz.getLocation(locationName));
+    }
+
+    // Create notification channel for Android
+    const androidNotificationChannel = AndroidNotificationChannel(
+      'channel id',
+      'channelName',
+      importance: Importance.max,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidNotificationChannel);
   }
 
-  Future<void> scheduleNotification(String title, String body, DateTime scheduledTime, String notificationType) async {
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'azan_channel_id', // channel ID
-      'Azan Notifications', // channel name
-      channelDescription: 'Notification channel for Azan timings',// Change this to your channel description
-      importance: Importance.max,
-      priority: Priority.high,
-      sound: notificationType == 'sound' ? RawResourceAndroidNotificationSound('azan') : null,
-      playSound: notificationType == 'sound',
-      enableVibration: notificationType == 'vibrate',
+  static Future notificationDetails() async {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'channel id',
+        'channelName',
+        importance: Importance.max,
+        icon: '@mipmap/ic_launcher',
+      ),
+      iOS: DarwinNotificationDetails(),
     );
+  }
 
-    var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+  static Future showNotification({
+    int id = 0,
+    String? title,
+    String? body,
+    String? payload,
+  }) async =>
+      _notifications.show(
+        id,
+        title,
+        body,
+        await notificationDetails(),
+        payload: payload,
+      );
 
-    // Schedule the notification using zonedSchedule
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      0,
+  Future<bool> requestExactAlarmPermission() async {
+    if (Platform.isAndroid && (await Permission.scheduleExactAlarm.isDenied)) {
+      if (await Permission.scheduleExactAlarm.request().isGranted) {
+        return true;
+      } else {
+        await openAppSettings();
+        return false;
+      }
+    }
+    return true;
+  }
+  Future showScheduledNotification({
+    int id = 0,
+    String? title,
+    String? body,
+    String? payload,
+    required DateTime scheduledDate,
+  }) async {
+    // Print current local timezone
+    final localTimezone = await FlutterTimezone.getLocalTimezone();
+    print('Current device timezone: $localTimezone');
+
+    // Ensure timezone is set
+    tz.setLocalLocation(tz.getLocation(localTimezone));
+    print('Scheduled notification timezone: ${tz.local.name}');
+
+    // Log the exact scheduled date and time with timezone
+    final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+    print('Scheduled notification for: $tzScheduledDate');
+
+    // Schedule the notification
+    await _notifications.zonedSchedule(
+      id,
       title,
       body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      platformChannelSpecifics,
-      androidAllowWhileIdle: true,
+      tzScheduledDate,
+      await notificationDetails(),
+      payload: payload,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
     );
+  }
+
+  Future<bool> requestNotificationPermission() async {
+    if (Platform.isAndroid) {
+      PermissionStatus status = await Permission.notification.status;
+      if (!status.isGranted) {
+        status = await Permission.notification.request();
+      }
+      return status.isGranted;
+    }
+    return true;
+  }
+
+  static tz.TZDateTime scheduleDailyNotification(TimeOfDay time) {
+    final now = tz.TZDateTime.now(tz.local);
+    final scheduleDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+    return scheduleDate.isBefore(now)
+        ? scheduleDate.add(const Duration(days: 1))
+        : scheduleDate;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:quran_complete_ui/provider/theme_provider.dart';
 
 import 'firebase_options.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,9 +14,12 @@ import 'package:flutter/material.dart';
 import 'package:quran_complete_ui/widget/widget_data.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:provider/provider.dart';
 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark); // Initial mode is dark
+
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,28 +36,33 @@ void main() async{
   );
 
 
-    runApp(const CompleteQuranApp());
+    runApp(ChangeNotifierProvider(create: (_) => ThemeNotifier(),
+    child: const CompleteQuranApp()));
 
 }
-
 class CompleteQuranApp extends StatelessWidget {
   const CompleteQuranApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
 
-
-      return  MaterialApp(
-        debugShowCheckedModeBanner: false,
-        //color: backGroundColor,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-      
-        ),
-        home: ShowUpAnimation(child: const CoverPageDetail()),
-      );
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier.themeModeNotifier,
+      builder: (context, themeMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.light(),
+          themeMode: themeMode, // Set the theme based on the ValueNotifier
+          home:ShowUpAnimation(child:const CoverPageDetail(),), // Main screen widget
+        );
+      },
+    );
   }
 }
+
+
 
 class ShowUpAnimation extends StatefulWidget {
   final Widget child;

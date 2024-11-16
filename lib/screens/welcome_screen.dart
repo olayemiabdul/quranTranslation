@@ -10,8 +10,10 @@ import 'package:quran_complete_ui/constant.dart';
 
 
 import '../azan/notification_class.dart';
-import '../quran_text_package/quran_text_mainscreen.dart';
-import '../quran_translation_package/quran_translation_mainscreen.dart';
+import '../quran_ayah/Surah_List.dart';
+
+import '../quran_translation_package/quran_translationList.dart';
+
 
 class WelcomeScreenPage extends StatefulWidget {
    const WelcomeScreenPage({super.key});
@@ -163,13 +165,13 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
                    ),
                  ),
                  onTap: (){
-                   Navigator.push(context, MaterialPageRoute(builder:(context)=>const QuranTranslationMainPage()));
+                   Navigator.push(context, MaterialPageRoute(builder:(context)=>const QuranTranslationListPage()));
                  },
                ) ,
                const SizedBox(width: 5,),
                InkWell(
                  onTap: (){
-                   Navigator.push(context,MaterialPageRoute(builder:(context)=>const QuranTextMainPage (),),);
+                   Navigator.push(context,MaterialPageRoute(builder:(context)=>const SurahListPage (),),);
                  },
                  child: Container(
                    height: 110,

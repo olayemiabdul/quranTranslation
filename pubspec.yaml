@@ -49,6 +49,8 @@ dependencies:
 
   permission_handler: ^11.3.1
   android_intent_plus: ^5.1.0
+  flutter_timezone: ^3.0.1
+  rxdart: ^0.28.0
 
 
 
@@ -81,12 +83,12 @@ flutter:
 
 
   fonts:
-  - family: Kitab-Regular
-    fonts:
-        - asset: fonts/Kitab-Regular.ttf
-
   - family: Kitab-Bold
     fonts:
         - asset: fonts/Kitab-Bold.ttf
+
+  - family: UthmanTN2
+    fonts:
+        - asset: fonts/UthmanTN2.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

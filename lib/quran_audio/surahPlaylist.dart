@@ -102,7 +102,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:quran_complete_ui/constant.dart';
 import 'package:quran_complete_ui/dropdown_class/reciter_list.dart';
 
-import 'package:quran_complete_ui/quran_audio/reciterpage.dart';
 
 
 

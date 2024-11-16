@@ -2,88 +2,77 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:quran_complete_ui/quran_translation_package/quran_translation_text.dart';
+import 'package:provider/provider.dart';
+import 'package:quran_complete_ui/quran_translation_package/translations_model_class.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../constant.dart';
 import '../dropdown_class/translator_list.dart';
+import '../provider/theme_provider.dart';
+import '../quranText_englishTranslation/eng_arabic_model_class.dart';
+import 'organized_translationAyah.dart';
 
 class QuranTranslationListPage extends StatefulWidget {
   const QuranTranslationListPage({super.key});
 
   @override
-  _QuranTranslationListPageState createState() =>
-      _QuranTranslationListPageState();
+  _QuranTranslationListPageState createState() => _QuranTranslationListPageState();
 }
 
 class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
-  List<dynamic> quranTranslateData = [];
-  final TextEditingController colorController = TextEditingController();
-
+  List<TranslationSurahClass> quranTranslateData = [];
   TranslatorName? selectedTranslator;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-
-    // getQuranTranslationData();
-    getQuranText();
+    getQuranText(); // Load default translation on page load
   }
 
 
 
-
-  //without offline access
-  Future<void> getQuranTranslationData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? cachedData = prefs.getString('mainData');
-    if (cachedData != null) {
-      setState(() {
-        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
-      });
-    }
-  else{
-      final response = await http
-          .get(Uri.parse('https://api.alquran.cloud/v1/quran/en.ahmedali'));
-      if (response.statusCode == 200) {
-        setState(() {
-          quranTranslateData = json.decode(response.body)['data']['surahs'];
-        });
-        await prefs.setString('mainData', response.body);
-      } else {
-        throw Exception('Failed to load Quran data');
-      }
-    }
-  }
-  // with shared pref for offline
   Future<void> getQuranText() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? cachedData = prefs.getString('translationData');
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? cachedData = prefs.getString('translationData');
 
-    if (cachedData != null) {
-      setState(() {
-        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
-      });
-    }
-    else {
-      final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"));
-      if (response.statusCode == 200) {
+      if (cachedData != null) {
         setState(() {
-          quranTranslateData = json.decode(response.body)["data"]["surahs"];
+          quranTranslateData = (json.decode(cachedData)["data"]["surahs"] as List)
+              .map((item) => TranslationSurahClass.fromJson(item))
+              .toList();
         });
-        await prefs.setString('translationData', response.body);
       } else {
-        throw Exception('Failed to load data');
+        final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"));
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body)['data']['surahs'] as List;
+          setState(() {
+            quranTranslateData = data.map((item) => TranslationSurahClass.fromJson(item)).toList();
+            isLoading = false;
+          });
+          await prefs.setString('translationData', response.body);
+        } else {
+          throw Exception('Failed to load data');
+        }
       }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Error fetching Quran data: $e');
     }
   }
-
+  // Method to fetch translation based on selected reciter
   Future<void> getQuranTranslationReciter(String reciter) async {
-    final response = await http
-        .get(Uri.parse('https://api.alquran.cloud/v1/quran/$reciter'));
+    setState(() => isLoading = true);
+    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/$reciter'));
+
     if (response.statusCode == 200) {
+      final data = json.decode(response.body)['data']['surahs'] as List;
       setState(() {
-        quranTranslateData = json.decode(response.body)['data']['surahs'];
+        quranTranslateData = data.map((item) => TranslationSurahClass.fromJson(item)).toList();
+        isLoading = false;
       });
     } else {
       throw Exception('Failed to load Quran data');
@@ -92,120 +81,129 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quran Translation'),
+        backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
       ),
-      backgroundColor: gridContainerColor,
       body: quranTranslateData.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : Column(
-              children: [
-                const SizedBox(
-                  height: 60,
+        children: [
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDarkTheme ? Colors.black54 : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      blurRadius: 4,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                DropdownMenu<TranslatorName>(
-                  requestFocusOnTap: true,
-                  width: 300,
-                  menuStyle: MenuStyle(
-                    backgroundColor:
-                        WidgetStateProperty.all<Color>(gridContainerColor),
-                  ),
-                  enableFilter: true,
-                  textStyle: TextStyle(color: Colors.amberAccent),
-                  enableSearch: true,
-                  //initialSelection: TranslatorName.values.first,
-                  controller: colorController,
-                  // requestFocusOnTap is enabled/disabled by platforms when it is null.
-                  // On mobile platforms, this is false by default. Setting this to true will
-                  // trigger focus request on the text field and virtual keyboard will appear
-                  // afterward. On desktop platforms however, this defaults to true.
-                  //requestFocusOnTap: true,
-                  label: const Text('Select Language/Translator'),
-                  onSelected: (TranslatorName? reciter) {
-                    setState(() {
-                      selectedTranslator = reciter;
-                      //to change the translation
-
-                    });
-                    getQuranTranslationReciter(selectedTranslator!.text);
-                  },
-                  dropdownMenuEntries: TranslatorName.values
-                      .map<DropdownMenuEntry<TranslatorName>>(
-                          (TranslatorName reciter) {
-                    return DropdownMenuEntry<TranslatorName>(
-                      value: reciter,
-                      label: reciter.label.toString(),
-                      enabled: reciter.label != 'Grey',
-                      //leadingIcon: Icon(Icons.search, color: Colors.white,),
-                      style: MenuItemButton.styleFrom(
-                        backgroundColor: gridContainerColor,
+                child: DropdownButton<TranslatorName>(
+                  value: selectedTranslator,
+                  hint: const Text("Select Language/Translator"),
+                  //icon: const Icon(Icons.translate, color: Colors.teal),
+                  dropdownColor: isDarkTheme ? Colors.black54 : Colors.grey,
+                  style: TextStyle(color: isDarkTheme ? Colors.white : Colors.black87),
+                  isExpanded: true, // Fix overflow
+                    onChanged: (TranslatorName? reciter) {
+                      if (reciter != null) {
+                        setState(() {
+                          selectedTranslator = reciter;
+                          quranTranslateData.clear();
+                          isLoading = true;
+                        });
+                        getQuranTranslationReciter(reciter.text);
+                      }
+                    },
+                  items: TranslatorName.values.map((TranslatorName translator) {
+                    return DropdownMenuItem<TranslatorName>(
+                      value: translator,
+                      child: Text(
+                        translator.label,
+                        style: TextStyle(
+                          color: isDarkTheme ? Colors.white : Colors.black87,
+                        ),
                       ),
                     );
                   }).toList(),
                 ),
-                //Text(colorController.text),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: quranTranslateData.length,
-                    itemBuilder: (context, index) {
-                      final translatedtext = quranTranslateData[index];
-                      //final utmaniayah=quranData[index]
+              ),
+            ),
 
-                      return Card(
-                        color: gridContainerColor,
-                        child: ListTile(
-                            title: Text(
-                                'Surah ${quranTranslateData[index]["number"]}: ${quranTranslateData[index]["englishName"]}'),
-                            subtitle: Text(
-                                ' ${quranTranslateData[index]["ayahs"].length} Verses-${quranTranslateData[index]['revelationType']}'),
-                            trailing: Text(
-                              '${quranTranslateData[index]['name']}\n ${quranTranslateData[index]['englishNameTranslation']}',
-                              style: const TextStyle(
-                                  //wordSpacing: 2,
-
-                                  fontFamily: 'Kitab-Bold',
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            leading: Container(
-                              alignment: Alignment.center,
-                              height: 30,
-                              width: 40,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: gridContainerColor,
-                              ),
-                              child: Text(
-                                quranTranslateData[index]['number'].toString(),
-                                style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        QuranTranslationTextPage(
-                                          translatedAyahs:
-                                              translatedtext['ayahs'],
-                                          surahEnglishName:
-                                              translatedtext['englishName'],
-                                          numberInSurah:
-                                              translatedtext['ayahs'],
-                                        )),
-                              );
-                            }),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.builder(
+              itemCount: quranTranslateData.length,
+              itemBuilder: (context, index) {
+                final surah = quranTranslateData[index];
+                return Card(
+                  color: isDarkTheme ? Colors.grey[850] : Colors.white,
+                  child: ListTile(
+                    title: Text(
+                      'Page ${surah.ayahsEA.first.page}: ${surah.englishNameTranslation}',
+                      style: TextStyle(
+                        color: isDarkTheme ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${surah.numberOfAyahs} Verses',
+                      style: TextStyle(
+                        color: isDarkTheme ? Colors.grey[300] : Colors.black87,
+                      ),
+                    ),
+                    trailing: Text(
+                      '${surah.englishName}\n${surah.englishNameTranslation}',
+                      style: TextStyle(
+                        fontFamily: 'Kitab-Bold',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkTheme ? Colors.cyanAccent : Colors.teal,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: isDarkTheme ? Colors.black26 : Colors.black54,
+                      child: Text(
+                        surah.number.toString(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrganizedTranslationAyahViewScreen(
+                            initialPage: surah.ayahsEA.first.page - 1,
+                            surahs: quranTranslateData,
+                          ),
+                        ),
                       );
                     },
                   ),
-                ),
-              ],
+                );
+              },
             ),
+          ),
+        ],
+      ),
     );
   }
 }

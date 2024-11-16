@@ -9,11 +9,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../dropdown_class/calculation_methods.dart';
 import '../model/prayer_time_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+import 'notification_class.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -30,8 +34,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
 
   DateTime selectedDate = DateTime.now();
   bool exactAlarmEnabled = false;
-  //List<Abdul> prayerList = [];
-  List<PrayerDailyTimes> prayerListNew = [];
+
   //CurrentLocations currentLocations=CurrentLocations();
   // var overlayController=OverlayPortalController();
   // final locationController=TextEditingController();
@@ -46,14 +49,26 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
   bool isNotificationInitialized = false;
 
 
+  NotificationApi test = NotificationApi();
 
 
 
 
+
+
+
+  // Future<void> requestExactAlarmPermission() async {
+  //   if (await Permission.scheduleExactAlarm.isDenied) {
+  //     await Permission.scheduleExactAlarm.request();
+  //   }
+  // }
 
 
 
   Future<bool> _handleLocationPermission() async {
+    if (kIsWeb) {
+      return true; // Location permission is not needed on the web.
+    }
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -81,30 +96,54 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       return false;
     }
 
-    await handleNotificationPermission();
+    if (!kIsWeb) {
+      await handleNotificationPermission();
+    }
     return true;
   }
 
   Future<void> handleNotificationPermission() async {
-    PermissionStatus status = await Permission.notification.status;
+    if (Platform.isAndroid || Platform.isIOS) {
+      PermissionStatus status = await Permission.notification.status;
+      if (!status.isGranted) {
+        status = await Permission.notification.request();
+      }
 
-    if (!status.isGranted) {
-      status = await Permission.notification.request();
-    }
-
-    if (status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification permissions are granted')));
-    } else if (status.isDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification permissions are denied')));
-    } else if (status.isPermanentlyDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Notification permissions are permanently denied. Please enable them in settings.')));
-      await openAppSettings();
+      if (status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notification permissions are granted')));
+      } else if (status.isDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Notification permissions are denied')));
+      } else if (status.isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Notification permissions are permanently denied. Please enable them in settings.')));
+        await openAppSettings();
+      }
     }
   }
+
+  // Future<void> handleNotificationPermission() async {
+  //   PermissionStatus status = await Permission.notification.status;
+  //
+  //   if (!status.isGranted) {
+  //     status = await Permission.notification.request();
+  //   }
+  //
+  //   if (status.isGranted) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Notification permissions are granted')));
+  //   } else if (status.isDenied) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Notification permissions are denied')));
+  //   } else if (status.isPermanentlyDenied) {
+  //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+  //         content: Text(
+  //             'Notification permissions are permanently denied. Please enable them in settings.')));
+  //     await openAppSettings();
+  //   }
+  // }
 
   Future<void> getCurrentPosition() async {
     final hasPermission = await _handleLocationPermission();
@@ -174,74 +213,60 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
 
 
 
+
+
+
+
   Future<void> initializeNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
-
-    await flutterLocalNotificationsPlugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap
-        debugPrint('Notification tapped: ${response.payload}');
-      },
-    );
-
-    isNotificationInitialized = true;
+    await NotificationApi.init(initScheduled: true);
+    setState(() {
+      isNotificationInitialized = true;
+    });
   }
-
-
   Future<void> scheduleAzanNotification(
       String prayerName,
       DateTime prayerTime, {
         required bool sound,
         required bool vibrate,
       }) async {
-    if (!isNotificationInitialized) return;
+    if (!isNotificationInitialized || kIsWeb) return;
 
     final int notificationId = prayerName.hashCode;
+    tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
 
-    // Convert prayer time to TZDateTime
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
+    // Check if scheduled time is in the past, and if so, schedule it for the next day.
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+      print('Rescheduled $prayerName notification for the next day at $scheduledDate');
+    }
 
-    // Only schedule if the prayer time hasn't passed
-    if (scheduledDate.isAfter(tz.TZDateTime.now(tz.local))) {
-      try {
-        await flutterLocalNotificationsPlugin.zonedSchedule(
-          notificationId,
-          'Prayer Time',
-          'It is time for $prayerName prayer',
-          scheduledDate,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              'prayer_channel',
-              'Prayer Times',
-              channelDescription: 'Notifications for prayer times',
-              importance: Importance.max,
-              priority: Priority.high,
-              sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
-              playSound: sound,
-              enableVibration: vibrate,
-              category: AndroidNotificationCategory.alarm,
-              fullScreenIntent: true,
-              visibility: NotificationVisibility.public,
-            ),
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        'Prayer Time',
+        'It is time for $prayerName prayer',
+        scheduledDate,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'azan_channel_id',
+            'Prayer Times',
+            channelDescription: 'Notifications for prayer times',
+            importance: Importance.max,
+            priority: Priority.high,
+            sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
+            playSound: sound,
+            enableVibration: vibrate,
           ),
-          androidAllowWhileIdle: true,
-          uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-          matchDateTimeComponents: DateTimeComponents.time,
-        );
-
-        print('Scheduled notification for $prayerName at $scheduledDate');
-      } catch (e) {
-        print('Error scheduling notification: $e');
-      }
+        ),
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      print('Error scheduling notification: $e');
     }
   }
-
-
-
-
 
   Future<void> schedulePrayerNotifications(PrayerDailyTimes prayerTimes) async {
     final now = DateTime.now();
@@ -268,6 +293,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
           int.parse(timeParts[1]),
         );
 
+        // Schedule notification for each prayer time
         scheduleAzanNotification(
           name,
           prayerDateTime,
@@ -279,7 +305,6 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       }
     });
   }
-
 
   Widget buildPrayerTile(String prayerName, String prayerTime, BuildContext context) {
     return ListTile(
@@ -364,29 +389,19 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     setState(() {});
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   @override
   void initState() {
     super.initState();
 
 
+
+    super.initState();
+    tz.initializeTimeZones();
     initializeNotifications();
     getCurrentPosition();
     loadNotificationModePreference();
-    tz.initializeTimeZones();
+
+
     }
 
   @override

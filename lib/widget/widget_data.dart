@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'package:share_plus/share_plus.dart';
 
@@ -13,15 +14,19 @@ import 'package:share_plus/share_plus.dart';
 import '../constant.dart';
 import '../hajj_adkar/hajj_screen.dart';
 
+
 import '../model/cover_page_model.dart';
 
-import '../quranText_UrduTranslation/quran_text_urdu_list.dart';
-import '../quranText_englishTranslation/qurantext_engTrans_list.dart';
+import '../provider/theme_provider.dart';
 
+
+import '../quranText_UrduTranslation/quran_urduTranslationList.dart';
+import '../quranText_englishTranslation/eng_arabic_list.dart';
 import '../quran_audio/surahPlaylist.dart';
+import '../quran_ayah/Surah_List.dart';
 import '../quran_byPage/quran_pages.dart';
 
-import '../quran_text_package/quran_surahList.dart';
+
 
 import '../quran_translation_package/quran_translationList.dart';
 
@@ -47,18 +52,18 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => const QuranTranslationListPage()),
+            builder: (context) => const  QuranTranslationListPage()),
       );
     } else if (index == 2) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const QuranTextPage()),
+        MaterialPageRoute(builder: (context) => const SurahListPage()),
       );
     } else if (index == 3) {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => const UrduArabicTextSurahListPage()),
+            builder: (context) => const  QuranUrduTranslationListPage()),
       );
     } else if (index == 4) {
       Navigator.push(
@@ -69,7 +74,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => const EngArabicTextSurahListPage()),
+            builder: (context) => const  EngArabicTextSurahListPageNew()),
       );
     } else if (index == 6) {
       Navigator.push(
@@ -90,7 +95,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const AudioSurahList ()),
+        MaterialPageRoute(builder: (context) =>  AudioSurahList ()),
       );
     }
     // navigate to two
@@ -143,14 +148,31 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
 
     QuranCover reading = QuranCover();
     var overlayController=OverlayPortalController();
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Al-Quran'),
         actions: [
 
+
           PopupMenuButton(
             itemBuilder: (context) => [
+               PopupMenuItem(
+                value: 1,
+                // row with 2 children
+                child: IconButton(
+
+                  icon: Icon(
+                    themeNotifier.themeModeNotifier.value == ThemeMode.dark
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                  ),
+                  onPressed: themeNotifier.toggleTheme, // Call the toggle function from ThemeNotifier
+                ),
+
+
+              ),
               PopupMenuItem(
                 value: 1,
                 // row with 2 children
@@ -225,8 +247,8 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
           borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
-              bottomLeft: Radius.circular(50),
-              bottomRight: Radius.circular(50)),
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20)),
           //color:gridContainerColor,
         ),
         child: Column(
