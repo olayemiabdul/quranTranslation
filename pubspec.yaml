@@ -74,21 +74,21 @@ flutter:
 
   uses-material-design: true
   assets:
-     - assets/images/
-     - assets/sounds/azan.mp3
-     - assets/sounds/hajj.pdf
+    - assets/images/
+    - assets/sounds/azan.mp3
+    - assets/sounds/hajj.pdf
 
 
 
 
 
   fonts:
-  - family: Kitab-Bold
-    fonts:
+    - family: Kitab-Bold
+      fonts:
         - asset: fonts/Kitab-Bold.ttf
 
-  - family: UthmanTN2
-    fonts:
+    - family: UthmanTN2
+      fonts:
         - asset: fonts/UthmanTN2.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

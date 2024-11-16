@@ -1,0 +1,38 @@
+workflows:
+  default-workflow:
+    name: Build and Test QuranCompleteUI
+    max_build_duration: 60 # 1 hour
+
+    environment:
+      flutter: stable
+      xcode: 16.1
+      cocoapods: default
+      vars:
+        ANDROID_KEYSTORE_PATH: $CM_ANDROID_KEYSTORE_PATH
+        ANDROID_KEYSTORE_PASSWORD: $CM_ANDROID_KEYSTORE_PASSWORD
+        ANDROID_KEY_ALIAS: $CM_ANDROID_KEY_ALIAS
+        ANDROID_KEY_PASSWORD: $CM_ANDROID_KEY_PASSWORD
+
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+          flutter pub upgrade
+
+      - name: Run Tests
+        script: flutter test
+
+      - name: Build APK
+        script: flutter build apk --release
+
+      - name: Build iOS App
+        script: flutter build ios --release --no-codesign
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/ios/iphoneos/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - olayemi.abdullahi9585@gmail.com
