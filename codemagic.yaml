@@ -1,7 +1,7 @@
 workflows:
   default-workflow:
     name: Build and Test QuranCompleteUI
-    max_build_duration: 60 # 1 hour
+    max_build_duration: 60 # 1 hour maximum build duration
 
     environment:
       flutter: stable
@@ -18,6 +18,8 @@ workflows:
         script: |
           flutter pub get
           flutter pub upgrade
+          cd ios
+          pod install 
 
       - name: Run Tests
         script: flutter test
@@ -30,7 +32,7 @@ workflows:
 
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-      - build/ios/iphoneos/*.ipa
+      - build/ios/ipa/*.ipa # Adjusted path for iOS IPA file
 
     publishing:
       email:
