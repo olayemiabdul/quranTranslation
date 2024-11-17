@@ -95,7 +95,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) =>  AudioSurahList ()),
+        MaterialPageRoute(builder: (context) =>  const AudioSurahList ()),
       );
     }
     // navigate to two
