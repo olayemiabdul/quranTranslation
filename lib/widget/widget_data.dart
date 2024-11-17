@@ -296,10 +296,10 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                     ),
                   ),
                   Text(
-                    " ${selectedDate.year}   ${selectedDate.day}",
+                    " ${selectedDate.year} ${selectedDate.day}",
                     style: GoogleFonts.roboto(
                       textStyle: const TextStyle(
-                          color: Colors.red,
+                          color: Colors.amber,
                           fontSize: 20,
                           fontWeight: FontWeight.bold),
                     ),

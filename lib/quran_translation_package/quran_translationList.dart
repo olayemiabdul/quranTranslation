@@ -5,10 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:quran_complete_ui/quran_translation_package/translations_model_class.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constant.dart';
+
 import '../dropdown_class/translator_list.dart';
 import '../provider/theme_provider.dart';
-import '../quranText_englishTranslation/eng_arabic_model_class.dart';
+
 import 'organized_translationAyah.dart';
 
 class QuranTranslationListPage extends StatefulWidget {
@@ -123,7 +123,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                         setState(() {
                           selectedTranslator = reciter;
                           quranTranslateData.clear();
-                          isLoading = true;
+
                         });
                         getQuranTranslationReciter(reciter.text);
                       }
