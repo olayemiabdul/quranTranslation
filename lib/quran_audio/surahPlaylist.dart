@@ -99,6 +99,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
 import 'package:quran_complete_ui/constant.dart';
 import 'package:quran_complete_ui/dropdown_class/reciter_list.dart';
 
@@ -107,6 +108,7 @@ import 'package:quran_complete_ui/dropdown_class/reciter_list.dart';
 
 
 import '../model/Audio_model.dart';
+import '../provider/theme_provider.dart';
 import 'audio_player.dart';
 
 
@@ -126,6 +128,7 @@ class _AudioSurahListState extends State<AudioSurahList> {
   TextEditingController reciterController=TextEditingController();
   ReciterName? selectedReciter;
   DateTime selectedDate = DateTime.now();
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -140,33 +143,44 @@ class _AudioSurahListState extends State<AudioSurahList> {
 
 
       const String url='https://api.alquran.cloud/v1/quran/ar.alafasy';
-      final response = await http.get(
-          Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data']['surahs'] as List;
-        setState(() {
-          audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
-        });
+   try{
+     final response = await http.get(
+         Uri.parse(url));
+     if (response.statusCode == 200) {
+       final data = json.decode(response.body)['data']['surahs'] as List;
+       setState(() {
+         audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
+          isLoading = false;
+       });
 
-      } else {
-        throw Exception('Failed to load');
-      }
+     } else {
+       throw Exception('Failed to load');
+     }
+   }catch (e){
+     print("Error fetching audio for reciter: $e");
+   }
 
   }
   Future<void> getAudioSurahList(String reciter, String ayahNumber) async {
 
 
       String url='https://api.alquran.cloud/v1/quran/$reciter??ar.alafasy/$ayahNumber.mp3';
-      final response = await http.get(
-          Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data']['surahs'] as List;
-        setState(() {
-          audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
-        });
+      try{
+        setState(() => isLoading = true);
+        final response = await http.get(
+            Uri.parse(url));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body)['data']['surahs'] as List;
+          setState(() {
+            audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
+            isLoading = false;
+          });
 
-      } else {
-        throw Exception('Failed to load');
+        } else {
+          throw Exception('Failed to load');
+        }
+      } catch(e){
+        print("Error fetching surahs: $e");
       }
 
   }
@@ -174,8 +188,10 @@ class _AudioSurahListState extends State<AudioSurahList> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
     return Scaffold(
-      backgroundColor: gridContainerColor,
+      backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: const BackButton(
@@ -183,9 +199,9 @@ class _AudioSurahListState extends State<AudioSurahList> {
         ),
         title: const Text('Audio Quran'),
       ),
-      body: Column(
+      body:audioSurahs.isEmpty?const Center(child: CircularProgressIndicator()): Column(
         children: [
-          const SizedBox(height: 30,),
+          const SizedBox(height: 10,),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: SizedBox(height: 60,
@@ -193,41 +209,55 @@ class _AudioSurahListState extends State<AudioSurahList> {
                 itemCount: 1,
 
                 itemBuilder: (BuildContext context, int index) {
-                  return   DropdownMenu<ReciterName >(
-                    initialSelection: ReciterName.alminshawi,
-                    controller: reciterController,
-                    requestFocusOnTap: true,
-                    width: 300,
-                    menuStyle: MenuStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(
-                          gridContainerColor),
-                    ),
-                    enableFilter: true,
-                    textStyle: const TextStyle(color: Colors.amberAccent),
-                    enableSearch: true,
-                    label: const Text('Select Language/Reciter'),
-                    onSelected: (ReciterName? reciter) {
-                      setState(() {
-                        selectedReciter = reciter ;
 
-
-                      });
-                      //to change the reciter
-                      final myAudioSurah = audioSurahs[index].ayahs[index].audio;
-                      getAudioSurahList(selectedReciter!.text,myAudioSurah.toString());
-                    },
-                    dropdownMenuEntries: ReciterName.values
-                        .map<DropdownMenuEntry<ReciterName>>(
-                            (ReciterName reciter) {
-                          return DropdownMenuEntry<ReciterName>(
-                            value: reciter,
-                            label: reciter.label.toString(),
-                            enabled: reciter.label != 'Grey',
-                            style: MenuItemButton.styleFrom(
-
+                  return   Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: isDarkTheme ? Colors.black54 : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 4),
                             ),
-                          );
-                        }).toList(),
+                          ],
+                        ),
+                        child: DropdownButton<ReciterName>(
+                          value: selectedReciter,
+                          dropdownColor: isDarkTheme ? Colors.black54 : Colors.grey,
+                          hint: Text("Select Reciter", style: TextStyle(color: isDarkTheme ? Colors.black54 : Colors.grey)),
+                          style: TextStyle(color: isDarkTheme ? Colors.white : Colors.black87),
+                          isExpanded: true,
+
+
+                          icon: const Icon(Icons.arrow_downward, color: Colors.amberAccent),
+                          onChanged: (ReciterName? reciter) {
+                            setState(() {
+                              selectedReciter = reciter;
+
+
+                            });
+                            final myAudioSurah = audioSurahs[index].ayahs[index].audio;
+                            getAudioSurahList(selectedReciter!.text,myAudioSurah.toString());
+                          },
+                          items: ReciterName.values.map<DropdownMenuItem<ReciterName>>((ReciterName reciter) {
+                            return DropdownMenuItem<ReciterName>(
+                              value: reciter,
+                              child: Text(reciter.label,
+                                style: TextStyle(
+                                  color: isDarkTheme ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
                   );
                 },
 
