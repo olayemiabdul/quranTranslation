@@ -87,7 +87,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quran Translation'),
-        backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
+        //backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
       ),
       body: quranTranslateData.isEmpty
           ? const Center(child: CircularProgressIndicator())

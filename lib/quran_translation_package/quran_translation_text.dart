@@ -1,95 +1,100 @@
-
-import 'package:arabic_numbers/arabic_numbers.dart';
 import 'package:flutter/material.dart';
 
-import '../constant.dart';
+import '../responsiveness/responsive.dart'; // Import the Responsive class
+
 class QuranTranslationTextPage extends StatefulWidget {
   final List<dynamic> translatedAyahs;
+  final String surahEnglishName;
+  final List<dynamic> numberInSurah;
 
-  final String surahEnglishName;// to request for the appbar title from quran_list page
-  final List<dynamic> numberInSurah;// to request for the appbar title from quran_list page
-
-  const QuranTranslationTextPage({super.key, required this.translatedAyahs, required this.surahEnglishName, required this.numberInSurah});
+  const QuranTranslationTextPage({
+    super.key,
+    required this.translatedAyahs,
+    required this.surahEnglishName,
+    required this.numberInSurah,
+  });
 
   @override
-  State<QuranTranslationTextPage> createState() => _QuranTranslationTextPageState();
+  State<QuranTranslationTextPage> createState() =>
+      _QuranTranslationTextPageState();
 }
 
 class _QuranTranslationTextPageState extends State<QuranTranslationTextPage> {
-  ArabicNumbers  arabicNumber=ArabicNumbers();
   final int ayahsPerPage = 8;
+
   @override
   Widget build(BuildContext context) {
     int totalPages = (widget.translatedAyahs.length / ayahsPerPage).ceil();
+    final isMobile = Responsive.isMobile(context);
+    final isTablet = Responsive.isTablet(context);
+    final isDesktop = Responsive.isDesktop(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-          backgroundColor: gridContainerColor,
-          title:
-          Text(widget.surahEnglishName)
+        backgroundColor: Colors.teal,
+        title: Text(
+          widget.surahEnglishName,
+          style: TextStyle(
+            fontSize: isMobile ? 16 : isTablet ? 20 : 24,
+          ),
+        ),
       ),
       body: PageView.builder(
-          itemCount: totalPages,
-          //primary: false,
-          reverse: true,
-          //scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            final ayah = widget.translatedAyahs[index];
-            //final nim=widget.numberInSurah;
-            int startIndex = index * ayahsPerPage;
-            int endIndex = startIndex + ayahsPerPage;
-            if (endIndex > widget.translatedAyahs.length) {
-              endIndex = widget.translatedAyahs.length;
-            }
-            List<dynamic> ayahsOnPage = widget.translatedAyahs.sublist(startIndex, endIndex);
-            return SingleChildScrollView(
-              child: Center(
-                child: Column(
-                  //crossAxisAlignment: CrossAxisAlignment.stretch,
-                  //mainAxisAlignment: MainAxisAlignment.center,
-                  children: ayahsOnPage.map((ayah) {
-                    return Card(
-                      color: Colors.white,
-                      child: ListTile(
-                        title: Text(
+        itemCount: totalPages,
+        reverse: true,
+        itemBuilder: (context, index) {
+          int startIndex = index * ayahsPerPage;
+          int endIndex = startIndex + ayahsPerPage;
+          if (endIndex > widget.translatedAyahs.length) {
+            endIndex = widget.translatedAyahs.length;
+          }
+          List<dynamic> ayahsOnPage =
+          widget.translatedAyahs.sublist(startIndex, endIndex);
 
-                          ayah['text'].toString(),
-                          textAlign: TextAlign.justify,
-                          maxLines: 25,
-                          overflow: TextOverflow.visible,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                            fontFamily: 'Kitab-Bold',
-                          ),
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile
+                    ? 8.0
+                    : isTablet
+                    ? 16.0
+                    : 32.0, // Extra padding for desktop
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: ayahsOnPage.map((ayah) {
+                  return Card(
+                    child: ListTile(
+                      title: Text(
+                        ayah['text'].toString(),
+                        textAlign: TextAlign.justify,
+                        style: TextStyle(
+                          fontSize: isMobile
+                              ? 14
+                              : isTablet
+                              ? 18
+                              : 20, // Larger font for desktop
+                          fontWeight: FontWeight.bold,
                         ),
-                        leading:   Container(
-                          alignment: Alignment.center,
-                          height: 35,
-                          width: 35,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey,
-                          ),
-                          child: Text(
-                            (ayah['numberInSurah'].toString()),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.teal,
+                        child: Text(
+                          ayah['numberInSurah'].toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isMobile ? 12 : isTablet ? 14 : 16,
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
-            );
-
-
-          }),
+            ),
+          );
+        },
+      ),
     );
   }
 }

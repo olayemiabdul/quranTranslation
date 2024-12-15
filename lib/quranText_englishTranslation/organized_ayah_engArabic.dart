@@ -4,6 +4,7 @@ import 'package:quran_complete_ui/quranText_englishTranslation/eng_arabic_model_
 import 'package:quran_complete_ui/quranText_englishTranslation/quran_content_engArabic.dart';
 
 import '../provider/theme_provider.dart';
+import '../responsiveness/responsive.dart';
 import 'eng_arabic_text_page.dart';
 
 class OrganizedEngArabicAyahViewScreen extends StatefulWidget {
@@ -95,18 +96,44 @@ class _OrganizedEngArabicAyahViewScreenState extends State<OrganizedEngArabicAya
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              currentSurahName,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(width: 45),
-            Center(
-              child: Text(
-                englishName,
-                style: const TextStyle(fontSize: 14),
+            if (Responsive.isMobile(context)) ...[
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    currentSurahName,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 45),
+              const SizedBox(width: 8),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    englishName,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // Tablet and Desktop View
+              Flexible(
+                child: Text(
+                  currentSurahName,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+              Flexible(
+                child: Center(
+                  child: Text(
+                    englishName,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(width: 8),
             Text(
               'Juz $currentJuzNumber',
               style: const TextStyle(fontSize: 14),
@@ -134,12 +161,12 @@ class _OrganizedEngArabicAyahViewScreenState extends State<OrganizedEngArabicAya
           });
         },
         itemBuilder: (context, index) {
-          // Pass each QuranPage to EngArabicTextPageNew for displaying ayahs
           return EngArabicTextPageNew(page: quranPages[index]);
         },
       ),
     );
   }
+
 
   @override
   void dispose() {

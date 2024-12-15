@@ -36,6 +36,7 @@ import '../hajj_adkar/adhkar.dart';
 
 import '../azan/prayerTime.dart';
 
+import '../responsiveness/responsive.dart';
 import '../setting/settings_screen.dart';
 import 'custom_container.dart';
 
@@ -144,15 +145,19 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final isTablet = Responsive.isTablet(context);
+    final isDesktop = Responsive.isDesktop(context);
 
 
     QuranCover reading = QuranCover();
     var overlayController=OverlayPortalController();
     final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Al-Quran'),
+        title: Text(isMobile ? 'Quran' : 'Al-Quran'),
         actions: [
 
 
@@ -161,15 +166,13 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                PopupMenuItem(
                 value: 1,
                 // row with 2 children
-                child: IconButton(
-
+                child:  IconButton(
                   icon: Icon(
-                    themeNotifier.themeModeNotifier.value == ThemeMode.dark
-                        ? Icons.dark_mode
-                        : Icons.light_mode,
+                    isDarkTheme ? Icons.dark_mode : Icons.light_mode,
                   ),
-                  onPressed: themeNotifier.toggleTheme, // Call the toggle function from ThemeNotifier
+                  onPressed: themeNotifier.toggleTheme,
                 ),
+
 
 
               ),
@@ -182,7 +185,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                     controller: overlayController, overlayChildBuilder: (BuildContext context) {
                     return Positioned(
                       top: 250,
-                      right: 40,
+                      right: isMobile ? 40 : 20,
                       child: Container
                         (
                         decoration: const BoxDecoration(
@@ -265,7 +268,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                 style: GoogleFonts.allura(
                   textStyle: TextStyle(
                       color: Colors.blue.shade100,
-                      fontSize: 60,
+                      fontSize: isMobile ? 60 : 80,
                       fontWeight: FontWeight.bold),
                 ),
               ),
@@ -318,9 +321,9 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                     shrinkWrap: true,
                     physics: const ScrollPhysics(),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 0.8,
+                        SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:  isMobile ? 3 : isTablet ? 3 : 4,
+                            childAspectRatio: isMobile ? 0.9 : 0.8,
                             crossAxisSpacing: 5,
                             mainAxisSpacing: 6),
                     itemBuilder: (context, index) => InkWell(
@@ -334,8 +337,8 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                               children: [
                                 Image.asset(
                                   reading.readingActivity[index].icon,
-                                  height: 60,
-                                  width: 60,
+                                  height: isMobile ? 50 : 60,
+                                  width: isMobile ? 50 : 60,
                                 ),
 
                                 // Padding(

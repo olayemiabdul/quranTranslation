@@ -9,12 +9,14 @@ import 'package:quran_complete_ui/quran_translation_package/translations_model_c
 import '../provider/theme_provider.dart';
 import '../quranText_englishTranslation/eng_arabic_model_class.dart';
 import '../quranText_englishTranslation/quran_content_engArabic.dart';
+import '../responsiveness/responsive.dart';
 
 
 
 class OrganizedTranslationAyahViewScreen extends StatefulWidget {
   final List<TranslationSurahClass> surahs;
   final int initialPage;
+
 
   OrganizedTranslationAyahViewScreen({
     required this.surahs,
@@ -94,29 +96,33 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
+    final isMobile = Responsive.isMobile(context);
+    final isTablet = Responsive.isTablet(context);
+    final isDesktop = Responsive.isDesktop(context);
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              currentSurahName,
-              style: const TextStyle(fontSize: 16),
-            ),
+            if (!isMobile)
+              Text(
+                currentSurahName,
+                style: TextStyle(fontSize: isMobile ? 14 : 16),
+              ),
             const SizedBox(width: 45,),
             Center(
               child: Text(
                 englishName,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: isMobile ? 12 : 14),
               ),
             ),
             const SizedBox(width: 45,),
-            Text(
-              'Juz $currentJuzNumber',
-              style: const TextStyle(fontSize: 14),
-            ),
-
+            if (!isMobile)
+              Text(
+                'Juz $currentJuzNumber',
+                style: TextStyle(fontSize: isMobile ? 12 : 14),
+              ),
           ],
         ),
         actions: [

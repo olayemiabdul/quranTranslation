@@ -259,7 +259,8 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
             enableVibration: vibrate,
           ),
         ),
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );

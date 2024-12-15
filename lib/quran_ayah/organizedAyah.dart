@@ -1,17 +1,15 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quran_complete_ui/quran_ayah/quran_content.dart';
 import 'package:quran_complete_ui/quran_ayah/surah_class.dart';
-
 import '../provider/theme_provider.dart';
 import 'ayah_page.dart';
-
 
 class OrganizedAyahViewScreen extends StatefulWidget {
   final List<Surah> surahs;
   final int initialPage;
 
-  OrganizedAyahViewScreen({
+  const OrganizedAyahViewScreen({super.key,
     required this.surahs,
     this.initialPage = 1,
   });
@@ -26,8 +24,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   int currentPage = 1;
   String currentSurahName = '';
   int currentJuzNumber = 1;
-  String englishName='';
-
+  String englishName = '';
 
   @override
   void initState() {
@@ -45,14 +42,18 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       for (var ayah in surah.ayahs) {
         pageContents[ayah.page] ??= [];
         bool isNewSurah = surah.ayahs.first == ayah;
-        PageContent? existingContent = pageContents[ayah.page]!
-            .firstWhere(
-              (content) => content.surahName == surah.name,
+
+        String surahName = surah.name;
+        String englishName = surah.englishName;
+
+        PageContent? existingContent = pageContents[ayah.page]!.firstWhere(
+              (content) => content.surahName == surahName,
           orElse: () {
             var newContent = PageContent(
-              surahName: surah.name,
+              surahName: surahName,
               ayahs: [],
-              isNewSurah: isNewSurah, englishName: surah.englishName,
+              isNewSurah: isNewSurah,
+              englishName: englishName,
             );
             pageContents[ayah.page]!.add(newContent);
             return newContent;
@@ -64,7 +65,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
 
     quranPages = List.generate(604, (index) {
       int pageNumber = index + 1;
-      return   QuranPage(
+      return QuranPage(
         pageNumber: pageNumber,
         contents: pageContents[pageNumber] ?? [],
       );
@@ -78,8 +79,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       setState(() {
         currentSurahName = currentQuranPage.contents[0].surahName;
         currentJuzNumber = firstAyah.juz;
-        englishName=currentQuranPage.contents[0].englishName;
-
+        englishName = currentQuranPage.contents[0].englishName;
       });
     }
   }
@@ -88,53 +88,77 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              currentSurahName,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(width: 45,),
-            Center(
-              child: Text(
-                englishName,
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
-            const SizedBox(width: 45,),
-            Text(
-              'Juz $currentJuzNumber',
-              style: const TextStyle(fontSize: 14),
-            ),
-
+            Text(currentSurahName, style: const TextStyle(fontSize: 16)),
+            Text(englishName, style: const TextStyle(fontSize: 14)),
+            Text('Juz $currentJuzNumber', style: const TextStyle(fontSize: 14)),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(
-              isDarkTheme ? Icons.dark_mode : Icons.light_mode,
-            ),
+            icon: Icon(isDarkTheme ? Icons.dark_mode : Icons.light_mode),
             onPressed: themeNotifier.toggleTheme,
           ),
         ],
         centerTitle: true,
       ),
-      body: PageView.builder(
-        reverse: true,
-        controller: pageController,
-        itemCount: 604,
-        onPageChanged: (page) {
-          setState(() {
-            currentPage = page + 1;
-            updateCurrentSurahAndJuz(page);
-          });
-        },
-        itemBuilder: (context, index) {
-          return AyahPageView(page: quranPages[index]);
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth > 800) {
+            // Tablet/Desktop View: Side-by-side pages
+            return Row(
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    reverse: true,
+                    controller: pageController,
+                    itemCount: 604,
+                    onPageChanged: (page) {
+                      setState(() {
+                        currentPage = page + 1;
+                        updateCurrentSurahAndJuz(page);
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return AyahPageView(page: quranPages[index]);
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: PageView.builder(
+                    reverse: true,
+                    controller: pageController,
+                    itemCount: 604,
+                    itemBuilder: (context, index) {
+                      return AyahPageView(page: quranPages[(index + 1) % 604]);
+                    },
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // Mobile View: Single page at a time
+            return PageView.builder(
+              reverse: true,
+              controller: pageController,
+              itemCount: 604,
+              onPageChanged: (page) {
+                setState(() {
+                  currentPage = page + 1;
+                  updateCurrentSurahAndJuz(page);
+                });
+              },
+              itemBuilder: (context, index) {
+                return AyahPageView(page: quranPages[index]);
+              },
+            );
+          }
         },
       ),
     );
