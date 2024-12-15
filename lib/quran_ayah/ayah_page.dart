@@ -66,7 +66,7 @@ class AyahPageView extends StatelessWidget {
                         fontSize: surahNameFontSize,
                         fontFamily: 'Kitab-Bold',
                         fontWeight: FontWeight.bold,
-                        color: isDarkTheme ? Colors.white : Colors.black,
+                        color: isDarkTheme ? Colors.black : Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
