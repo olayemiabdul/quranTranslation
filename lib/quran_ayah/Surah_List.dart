@@ -107,8 +107,8 @@ class _SurahListPageState extends State<SurahListPage> {
                       style: TextStyle(
                         fontSize: fontSize * 0.9,
                         color: isDarkTheme
-                            ? Colors.grey[300]
-                            : Colors.black87,
+                            ? Colors.grey.shade900
+                            : Colors.black,
                       ),
                     ),
                     trailing: Text(
@@ -118,7 +118,7 @@ class _SurahListPageState extends State<SurahListPage> {
                         fontSize: fontSize,
                         fontWeight: FontWeight.bold,
                         color: isDarkTheme
-                            ? Colors.cyanAccent
+                            ? Colors.cyan
                             : Colors.teal,
                       ),
                       textAlign: TextAlign.center,
