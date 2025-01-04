@@ -64,7 +64,7 @@ class _QuranByPagesState extends State<QuranByPages> {
             style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
-          IconButton(
+          TextButton.icon(
             icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () async {
               final result = await showDialog<int>(
@@ -74,7 +74,8 @@ class _QuranByPagesState extends State<QuranByPages> {
               if (result != null) {
                 fetchPageData(result);
               }
-            },
+            }, label:const Text('Search Quran by page', style: TextStyle(color: Colors.white),),
+
           ),
         ],
       ),

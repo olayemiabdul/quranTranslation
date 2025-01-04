@@ -18,15 +18,25 @@ class AyahPageView extends StatelessWidget {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
 
-    bool isMobile = Responsive.isMobile(context);
-    bool isTablet = Responsive.isTablet(context);
-    bool isDesktop = Responsive.isDesktop(context);
+    // Get screen dimensions
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
 
-    double fontSize = isMobile ? 17 : isTablet ? 20 : 24;
-    double bismillahFontSize = isMobile ? 18 : isTablet ? 22 : 26;
-    double lineHeight = isMobile ? 2.2 : isTablet ? 2.4 : 2.6;
-    double padding = isMobile ? 12.0 : isTablet ? 16.0 : 24.0;
-    double surahNameFontSize = isMobile ? 20 : isTablet ? 24 : 30;
+    // Dynamic sizing based on screen dimensions
+    bool isMobile = screenWidth < 600;
+    bool isTablet = screenWidth >= 600 && screenWidth < 1200;
+    bool isDesktop = screenWidth >= 1200;
+
+    // Calculate font sizes based on screen height
+    double fontSize = screenHeight * (isMobile ? 0.025 : isTablet ? 0.028 : 0.032);
+    double bismillahFontSize = fontSize * 1.2;
+    double surahNameFontSize = fontSize * 1.3;
+
+    // Adjust line height and padding based on screen size
+    double lineHeight = isMobile ? 2.0 : isTablet ? 2.2 : 2.4;
+    double horizontalPadding = screenWidth * (isMobile ? 0.04 : isTablet ? 0.06 : 0.08);
+
 
     return Center(
       child: ConstrainedBox(
@@ -37,7 +47,7 @@ class AyahPageView extends StatelessWidget {
           color: isDarkTheme ? Colors.white : Colors.black,
           height: MediaQuery.of(context).size.height,
           child: ListView(
-            padding: EdgeInsets.symmetric(horizontal: padding),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
             children: [
               for (var content in page.contents) ...[
                 if (content.isNewSurah) ...[
@@ -66,7 +76,7 @@ class AyahPageView extends StatelessWidget {
                         fontSize: surahNameFontSize,
                         fontFamily: 'Kitab-Bold',
                         fontWeight: FontWeight.bold,
-                        color: isDarkTheme ? Colors.black : Colors.black,
+                        color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -86,7 +96,7 @@ class AyahPageView extends StatelessWidget {
                           ayah.text.replaceFirst(bismillah, '').trim();
                           return [
                             TextSpan(
-                              text: '               $bismillah\n',
+                              text: '       $bismillah\n',
                               style: TextStyle(
                                 fontSize: bismillahFontSize,
                                 color: isDarkTheme ? Colors.grey[850] : Colors.white,
@@ -95,6 +105,7 @@ class AyahPageView extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            if (remainingText.isNotEmpty)
                             TextSpan(
                               text:
                               '$remainingText ﴿${arabicNumber.convert(ayah.numberInSurah)}﴾',

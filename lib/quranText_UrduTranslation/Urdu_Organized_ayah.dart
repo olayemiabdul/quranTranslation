@@ -9,6 +9,7 @@ import 'package:quran_complete_ui/quranText_UrduTranslation/urdu_ayahTranslation
 
 
 import '../provider/theme_provider.dart';
+import '../responsiveness/responsive.dart';
 
 
 
@@ -103,19 +104,19 @@ class _UrduOrganizedTranslationAyahViewScreenState extends State<UrduOrganizedTr
           children: [
             Text(
               currentSurahName,
-              style: const TextStyle(fontSize: 16),
+              style:  TextStyle(  fontSize: Responsive.isMobile(context) ? 10 : 16,),
             ),
-            const SizedBox(width: 45,),
+            const SizedBox(width: 30,),
             Center(
               child: Text(
                 englishName,
-                style: const TextStyle(fontSize: 14),
+                style:  TextStyle(fontSize: Responsive.isMobile(context) ? 10 : 16,),
               ),
             ),
-            const SizedBox(width: 45,),
+            const SizedBox(width: 30,),
             Text(
               'Juz $currentJuzNumber',
-              style: const TextStyle(fontSize: 14),
+              style:  TextStyle(fontSize: Responsive.isMobile(context) ? 10 : 16,),
             ),
 
           ],
