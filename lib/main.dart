@@ -51,8 +51,11 @@ class CompleteQuranApp extends StatelessWidget {
       valueListenable: themeNotifier.themeModeNotifier,
       builder: (context, themeMode, child) {
         return MaterialApp(
+
           debugShowCheckedModeBanner: false,
-          theme: ThemeData.light(),
+          theme: ThemeData.light(
+
+          ),
           darkTheme: ThemeData.light(),
           themeMode: themeMode, // Set the theme based on the ValueNotifier
           home:ShowUpAnimation(child:const CoverPageDetail(),), // Main screen widget

@@ -216,6 +216,19 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
 
 
 
+  Future<bool> requestExactAlarmPermission() async {
+    if (Platform.isAndroid) {
+      if (await Permission.scheduleExactAlarm.isDenied) {
+        final status = await Permission.scheduleExactAlarm.request();
+        if (!status.isGranted) {
+          print('Exact Alarm permission denied. Redirecting to app settings...');
+          await openAppSettings();
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
   Future<void> initializeNotifications() async {
     await NotificationApi.init(initScheduled: true);
@@ -230,6 +243,12 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         required bool vibrate,
       }) async {
     if (!isNotificationInitialized || kIsWeb) return;
+    // Request exact alarm permission if not already granted
+    final exactAlarmPermissionGranted = await requestExactAlarmPermission();
+    if (!exactAlarmPermissionGranted) {
+      print('Cannot schedule $prayerName notification: Exact Alarm permission is not granted.');
+      return;
+    }
 
     final int notificationId = prayerName.hashCode;
     tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
@@ -401,6 +420,8 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     initializeNotifications();
     getCurrentPosition();
     loadNotificationModePreference();
+    requestExactAlarmPermission();
+    handleNotificationPermission();
 
 
     }
