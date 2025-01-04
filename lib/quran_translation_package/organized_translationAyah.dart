@@ -1,22 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quran_ayah/quran_content.dart';
-
 import 'package:quran_complete_ui/quran_translation_package/quran_translation_ayahText.dart';
 import 'package:quran_complete_ui/quran_translation_package/quran_translation_content.dart';
 import 'package:quran_complete_ui/quran_translation_package/translations_model_class.dart';
 
 import '../provider/theme_provider.dart';
-import '../quranText_englishTranslation/eng_arabic_model_class.dart';
-import '../quranText_englishTranslation/quran_content_engArabic.dart';
+
 import '../responsiveness/responsive.dart';
-
-
 
 class OrganizedTranslationAyahViewScreen extends StatefulWidget {
   final List<TranslationSurahClass> surahs;
   final int initialPage;
-
 
   OrganizedTranslationAyahViewScreen({
     required this.surahs,
@@ -33,8 +28,7 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
   int currentPage = 1;
   String currentSurahName = '';
   int currentJuzNumber = 1;
-  String englishName='';
-
+  String englishName = '';
 
   @override
   void initState() {
@@ -46,29 +40,26 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
   }
 
   void organizePages() {
-    Map<int, List< PageContentTranslation>> pageContent = {};
-
+    Map<int, List<PageContentTranslation>> pageContent = {};
 
     for (var surah in widget.surahs) {
-
       for (var ayahEA in surah.ayahsEA) {
-
         pageContent[ayahEA.page] ??= [];
         bool isNewSurah = surah.ayahsEA == ayahEA;
         PageContentTranslation? existingContent = pageContent[ayahEA.page]!.firstWhere(
               (content) => content.englishName == surah.englishName,
           orElse: () {
-            var newContent =  PageContentTranslation(
+            var newContent = PageContentTranslation(
               surahName: surah.englishName,
               englishName: surah.englishName,
-
-              isNewSurah: isNewSurah, ayahs: [],
+              isNewSurah: isNewSurah,
+              ayahs: [],
             );
             pageContent[ayahEA.page]!.add(newContent);
             return newContent;
           },
         );
-        existingContent.ayahs.add(ayahEA );
+        existingContent.ayahs.add(ayahEA);
       }
     }
 
@@ -76,7 +67,7 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
       int pageNumber = index + 1;
       return QuranPageTranslation(
         pageNumber: pageNumber,
-       contents: pageContent[pageNumber] ?? [],
+        contents: pageContent[pageNumber] ?? [],
       );
     });
   }
@@ -99,29 +90,30 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
     final isDesktop = Responsive.isDesktop(context);
+
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             if (!isMobile)
               Text(
                 currentSurahName,
-                style: TextStyle(fontSize: isMobile ? 14 : 16),
+                style: TextStyle(fontSize: isMobile ? 14 : isTablet ? 16 : 18),
               ),
-            const SizedBox(width: 45,),
+            const SizedBox(width: 45),
             Center(
               child: Text(
                 englishName,
-                style: TextStyle(fontSize: isMobile ? 12 : 14),
+                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 14 : 16),
               ),
             ),
-            const SizedBox(width: 45,),
+            const SizedBox(width: 45),
             if (!isMobile)
               Text(
                 'Juz $currentJuzNumber',
-                style: TextStyle(fontSize: isMobile ? 12 : 14),
+                style: TextStyle(fontSize: isMobile ? 12 : isTablet ? 14 : 16),
               ),
           ],
         ),
@@ -135,19 +127,23 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
         ],
         centerTitle: true,
       ),
-      body: PageView.builder(
-        reverse: true,
-        controller: pageController,
-        itemCount: 604,
-        onPageChanged: (page) {
-          setState(() {
-            currentPage = page + 1;
-            updateCurrentSurahAndJuz(page);
-          });
-        },
-        itemBuilder: (context, index) {
-          return AllTranslationTextPage(page: quranPages[index],);
-        },
+      body: ScrollConfiguration(
+        behavior: const CupertinoScrollBehavior(),
+
+        child: PageView.builder(
+          reverse: true,
+          controller: pageController,
+          itemCount: 604,
+          onPageChanged: (page) {
+            setState(() {
+              currentPage = page + 1;
+              updateCurrentSurahAndJuz(page);
+            });
+          },
+          itemBuilder: (context, index) {
+            return AllTranslationTextPage(page: quranPages[index]);
+          },
+        ),
       ),
     );
   }

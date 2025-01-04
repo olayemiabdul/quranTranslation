@@ -92,7 +92,7 @@ class _OrganizedEngArabicAyahViewScreenState extends State<OrganizedEngArabicAya
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

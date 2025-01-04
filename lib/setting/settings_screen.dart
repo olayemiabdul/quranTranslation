@@ -87,7 +87,8 @@ class SettingsPageScreen extends StatelessWidget {
     return  Scaffold(
       //backgroundColor: const Color(0xFF402D45),
       appBar: AppBar(
-        leading: const Icon(Icons.settings, color: Colors.white,),
+        automaticallyImplyLeading: true,
+        //leading: const Icon(Icons.settings, ),
         title: const Text('Settings'),
       ),
       body: Column(

@@ -20,7 +20,7 @@ class _SurahAudioPageState extends State<SurahAudioPage> {
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
-
+  //
   @override
   void initState() {
     super.initState();

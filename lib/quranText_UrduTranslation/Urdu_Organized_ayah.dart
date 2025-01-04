@@ -97,7 +97,7 @@ class _UrduOrganizedTranslationAyahViewScreenState extends State<UrduOrganizedTr
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

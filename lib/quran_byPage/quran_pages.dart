@@ -1,15 +1,10 @@
 import 'dart:convert';
-import 'dart:ui';
 import 'package:arabic_numbers/arabic_numbers.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:quran_complete_ui/quran_translation_package/quran_translation_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constant.dart';
-import '../dropdown_class/translator_list.dart';
-
 
 class QuranByPages extends StatefulWidget {
   const QuranByPages({super.key});
@@ -20,213 +15,201 @@ class QuranByPages extends StatefulWidget {
 
 class _QuranByPagesState extends State<QuranByPages> {
   List<dynamic> quranTranslateData = [];
-  final TextEditingController colorController = TextEditingController();
-  final TextEditingController textEditingController = TextEditingController();
   ArabicNumbers arabicNumber = ArabicNumbers();
-
-  TranslatorName? selectedReciter;
-  List<String> pageUrls = [];
-  int totalPages= 610;
+  final PageController pageController = PageController();
+  int activePage = 1;
+  int totalPages = 604; // Adjusted to match Quran pages
 
   @override
   void initState() {
     super.initState();
-
     getQuranTranslationData();
   }
 
   Future<void> getQuranTranslationData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? cachedData = prefs.getString('quranPageData');
+
     if (cachedData != null) {
       setState(() {
-        quranTranslateData = json.decode(cachedData)["data"]["surahs"];
-      });
-    }else{
-      final response = await http
-          .get(Uri.parse('https://api.alquran.cloud/v1/page/1/quran-uthmani'));
-      if (response.statusCode == 200) {
-        setState(() {
-          quranTranslateData = json.decode(response.body)['data']['ayahs'];
-        });
-        await prefs.setString('translatedData', response.body);
-      } else {
-        throw Exception('Failed to load Quran data');
-      }
-    }
-
-
-  }
-
-  Future<void> getQuranTranslationReciter(int pageNumber) async {
-    final response = await http.get(Uri.parse(
-        'https://api.alquran.cloud/v1/page/$pageNumber/quran-uthmani'));
-    if (response.statusCode == 200) {
-
-      setState(() {
-        quranTranslateData = json.decode(response.body)['data']['ayahs'];
-
-        activePage = pageNumber;
-        //pageUrls = List.generate(totalPages, (index) => "https://api.alquran.cloud/v1/page/${index + 1}/quran-uthmani");
+        quranTranslateData = json.decode(cachedData)["data"]["ayahs"];
       });
     } else {
-      throw Exception('Failed to load Quran data');
+      fetchPageData(1);
     }
   }
 
-  final PageController pageController = PageController();
-  int activePage = 1;
+  Future<void> fetchPageData(int pageNumber) async {
+    final response = await http.get(
+        Uri.parse('https://api.alquran.cloud/v1/page/$pageNumber/quran-uthmani'));
 
-  void onNextPage() {
-    if (activePage < quranTranslateData.length) {
-      pageController.nextPage(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.linear,
-      );
+    if (response.statusCode == 200) {
+      setState(() {
+        quranTranslateData = json.decode(response.body)['data']['ayahs'];
+        activePage = pageNumber;
+      });
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('quranPageData', response.body);
+    } else {
+      throw Exception('Failed to load Quran data');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //backgroundColor: Colors.white,
-
+      appBar: AppBar(
+        backgroundColor: gridContainerColor,
+        title: Text('Quran - Page $activePage',
+            style: const TextStyle(color: Colors.white)),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () async {
+              final result = await showDialog<int>(
+                context: context,
+                builder: (context) => PageJumpDialog(totalPages: totalPages),
+              );
+              if (result != null) {
+                fetchPageData(result);
+              }
+            },
+          ),
+        ],
+      ),
       body: quranTranslateData.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : Container(
-        height: MediaQuery.of(context).size.height,
-        decoration:  const BoxDecoration(
+          : PageView.builder(
+        controller: pageController,
+        onPageChanged: (page) {
+          if (page + 1 != activePage) {
+            fetchPageData(page + 1);
+          }
+        },
+        itemCount: totalPages,
+        itemBuilder: (context, pageIndex) {
+          return buildQuranPage(context);
+        },
+      ),
+      bottomNavigationBar: buildBottomNavigationBar(),
+    );
+  }
 
-          color: gridContainerColor,
-
-
-          //color:gridContainerColor,
-        ),
-
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 20,
+  Widget buildQuranPage(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: quranTranslateData.map((ayah) {
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            elevation: 4,
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: gridContainerColor,
+                child: Text(
+                  arabicNumber.convert(ayah['numberInSurah'].toString()),
+                  style: const TextStyle(color: Colors.white),
                 ),
-                Row(
-                  children: [
-                    TextButton(
-                        onPressed: () {
-                          setState(() {
-                            getQuranTranslationReciter(activePage -1);
-                          });
-                        },
-                        child: const Text('PreviousPage')),
-                    const SizedBox(width: 20,),
-                    Text('Page ${activePage.toString()}', style: const TextStyle(color: Colors.white),),
-                    const SizedBox(width: 20,),
-                    TextButton(
-                        onPressed: () {
-                          setState(() {
-                            getQuranTranslationReciter(activePage + 1);
-                          });
-                        },
-                        child: const Text('NextPage')),
-                  ],
+              ),
+              title: Text(
+                ayah['text'],
+                style: const TextStyle(
+                  fontFamily: 'Kitab-Bold',
+                  fontSize: 18,
+                  color: Colors.black,
                 ),
-                SizedBox(
-                  height: 50,
-                  width: 150,
-                  child: TextField(
-                    onChanged: (value){
-                      setState(() {
-                        //value=activePage.toString();
-                        getQuranTranslationReciter(int.parse(value));
-
-                      });
-                    },
-                    style: const TextStyle(
-                      color: Colors.lightBlueAccent,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "Goto",
-                      hintText: 'Enter Page number (1-604)',
-                      labelStyle: const TextStyle(
-                        color: Colors.grey,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade300,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                          color: Colors.amber,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      // prefixIcon: const Icon(
-                      //   Icons.lock_outline,
-                      // ),
-                    ),
-                  ),
-                ),
-
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: quranTranslateData.length,
-                    shrinkWrap: false,
-                    physics: const ScrollPhysics(),
-                 //scrollDirection: Axis.horizontal,
-                    controller: pageController,
-                    // onPageChanged: (int page) {
-                    //   setState(() {
-                    //     //activePage = page;
-                    //     activePage=page++;
-                    //     getQuranTranslationReciter(activePage+1);
-                    //
-                    //   });
-                    // },
-
-                    itemBuilder: (context, index) {
-                      final translatedtext = quranTranslateData[index];
-
-                      //final utmaniayah=quranData[index]
-
-                      return Card(
-                        color: Colors.white,
-                        child: ListTile(
-                          title: Text(translatedtext["text"] ,  style: const TextStyle(
-                              //wordSpacing: 2,
-
-
-                              fontFamily: 'Kitab-Bold',
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18),
-                              textAlign: TextAlign.right,),
-
-                          leading:   Container(
-                            alignment: Alignment.center,
-                            height: 35,
-                            width: 35,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.grey,
-                            ),
-                            child: Text(
-                              arabicNumber.convert( translatedtext['numberInSurah'].toString()),
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
-
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Text(' ${activePage.toString()}', style: const TextStyle(color: Colors.white),),
-              ],
+                textAlign: TextAlign.right,
+              ),
             ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget buildBottomNavigationBar() {
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      color: gridContainerColor,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              if (activePage > 1) {
+                fetchPageData(activePage - 1);
+                pageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            },
           ),
+          Text(
+            'Page $activePage of $totalPages',
+            style: const TextStyle(color: Colors.white),
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward, color: Colors.white),
+            onPressed: () {
+              if (activePage < totalPages) {
+                fetchPageData(activePage + 1);
+                pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PageJumpDialog extends StatelessWidget {
+  final int totalPages;
+
+  const PageJumpDialog({super.key, required this.totalPages});
+
+  @override
+  Widget build(BuildContext context) {
+    final TextEditingController controller = TextEditingController();
+
+    return AlertDialog(
+      title: const Text('Jump to Page'),
+      content: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: 'Enter page number (1-$totalPages)',
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () => Navigator.pop(context),
+        ),
+        ElevatedButton(
+          child: const Text('Go'),
+          onPressed: () {
+            final page = int.tryParse(controller.text);
+            if (page != null && page > 0 && page <= totalPages) {
+              Navigator.pop(context, page);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Invalid page number!')),
+              );
+            }
+          },
+        ),
+      ],
     );
   }
 }

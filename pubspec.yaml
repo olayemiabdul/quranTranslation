@@ -6,8 +6,13 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.9+10
 
+
 environment:
   sdk: '>=3.3.3 <4.0.0'
+ios:
+  bundleIdentifier: com.tuned.quranCompleteUi
+  version: '1.0.9'
+  buildNumber: '10'
 
 
 dependencies:
@@ -24,7 +29,7 @@ dependencies:
   intl: ^0.19.0
   http: ^1.2.1
   arabic_numbers: ^1.0.0
-  audioplayers: ^6.0.0
+ 
   flutter_settings_screens: ^0.3.4
   hive: ^2.0.5
   hive_flutter: ^1.1.0
@@ -43,7 +48,7 @@ dependencies:
   flutter_local_notifications:
 
   syncfusion_flutter_pdfviewer: ^25.2.5
-  firebase_core: ^2.31.1
+  firebase_core: ^2.32.0
   web_socket_channel: ^3.0.0
   provider: ^6.1.2
 
@@ -51,6 +56,19 @@ dependencies:
   android_intent_plus: ^5.1.0
   flutter_timezone: ^3.0.1
   rxdart: ^0.28.0
+  audioplayers: ^6.1.0
+  flutter_launcher_icons: ^0.14.2
+flutter_launcher_icons:
+    android: "launcher_icon"
+    ios: true
+    image_path: "assets/images/launch.png"
+    min_sdk_android: 21 # android min sdk min:16, default 21
+    web:
+      generate: true
+      image_path: "path/to/image.png"
+      background_color: "#hexcode"
+      theme_color: "#hexcode"
+
 
 
 

@@ -9,17 +9,19 @@ class OrganizedAyahViewScreen extends StatefulWidget {
   final List<Surah> surahs;
   final int initialPage;
 
-  const OrganizedAyahViewScreen({super.key,
+  const OrganizedAyahViewScreen({
+    super.key,
     required this.surahs,
     this.initialPage = 1,
   });
 
   @override
-  _OrganizedAyahViewScreenState createState() => _OrganizedAyahViewScreenState();
+  _OrganizedAyahViewScreenState createState() =>
+      _OrganizedAyahViewScreenState();
 }
 
 class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
-  PageController pageController = PageController();
+  late PageController pageController;
   List<QuranPage> quranPages = [];
   int currentPage = 1;
   String currentSurahName = '';
@@ -91,7 +93,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -110,55 +112,26 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 800) {
-            // Tablet/Desktop View: Side-by-side pages
-            return Row(
-              children: [
-                Expanded(
-                  child: PageView.builder(
-                    reverse: true,
-                    controller: pageController,
-                    itemCount: 604,
-                    onPageChanged: (page) {
-                      setState(() {
-                        currentPage = page + 1;
-                        updateCurrentSurahAndJuz(page);
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      return AyahPageView(page: quranPages[index]);
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    reverse: true,
-                    controller: pageController,
-                    itemCount: 604,
-                    itemBuilder: (context, index) {
-                      return AyahPageView(page: quranPages[(index + 1) % 604]);
-                    },
-                  ),
-                ),
-              ],
-            );
-          } else {
-            // Mobile View: Single page at a time
-            return PageView.builder(
-              reverse: true,
-              controller: pageController,
-              itemCount: 604,
-              onPageChanged: (page) {
-                setState(() {
-                  currentPage = page + 1;
-                  updateCurrentSurahAndJuz(page);
-                });
-              },
-              itemBuilder: (context, index) {
-                return AyahPageView(page: quranPages[index]);
-              },
-            );
-          }
+          final isTablet = constraints.maxWidth > 600;
+          return PageView.builder(
+            reverse: true,
+            controller: pageController,
+            physics: Theme.of(context).platform == TargetPlatform.iOS
+                ? BouncingScrollPhysics()
+                : ClampingScrollPhysics(),
+            itemCount: 604,
+            onPageChanged: (page) {
+              setState(() {
+                currentPage = page + 1;
+                updateCurrentSurahAndJuz(page);
+              });
+            },
+            itemBuilder: (context, index) {
+              return AyahPageView(
+                page: quranPages[index],
+              );
+            },
+          );
         },
       ),
     );

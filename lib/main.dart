@@ -20,14 +20,22 @@ import 'package:provider/provider.dart';
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark); // Initial mode is dark
 
-
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
-  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  final InitializationSettings initializationSettings = InitializationSettings(
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+
+  const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS, // Use DarwinInitializationSettings here
   );
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -35,11 +43,13 @@ void main() async{
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
-    runApp(ChangeNotifierProvider(create: (_) => ThemeNotifier(),
-    child: const CompleteQuranApp()));
-
+  runApp(ChangeNotifierProvider(
+    create: (_) => ThemeNotifier(),
+    child: const CompleteQuranApp(),
+  ));
 }
+
+
 class CompleteQuranApp extends StatelessWidget {
   const CompleteQuranApp({super.key});
 

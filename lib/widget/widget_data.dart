@@ -1,41 +1,22 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
-
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
 import 'package:share_plus/share_plus.dart';
-
-
 import '../constant.dart';
 import '../hajj_adkar/hajj_screen.dart';
-
-
 import '../model/cover_page_model.dart';
-
 import '../provider/theme_provider.dart';
-
-
 import '../quranText_UrduTranslation/quran_urduTranslationList.dart';
 import '../quranText_englishTranslation/eng_arabic_list.dart';
 import '../quran_audio/surahPlaylist.dart';
 import '../quran_ayah/Surah_List.dart';
 import '../quran_byPage/quran_pages.dart';
-
-
-
 import '../quran_translation_package/quran_translationList.dart';
-
 import '../hajj_adkar/adhkar.dart';
-
-
-
 import '../azan/prayerTime.dart';
-
 import '../responsiveness/responsive.dart';
 import '../setting/settings_screen.dart';
 import 'custom_container.dart';
@@ -94,278 +75,204 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
             builder: (context) =>   const HajjPage ()),
       );
     } else {
+
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) =>  const AudioSurahList ()),
       );
     }
-    // navigate to two
+
   }
-
-  var today = HijriCalendar.now();
- // for hijri date
-
- var selectedDate = DateTime.timestamp().toLocal(); //flutter date
+  final today = HijriCalendar.now();
   late Timer _timer;
   String formattedTime = '';
-  bool exactAlarmEnabled = false;
+  DateTime selectedDate = DateTime.now();
 
-  shareApp(BuildContext context) {
-    Share.share('Check out this amazing app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
-        subject: 'Share Our App');
-  }
   void updateTime() {
     setState(() {
-      selectedDate.hour -selectedDate.minute;
+      formattedTime = DateFormat('kk:mm:ss').format(DateTime.now());
     });
   }
 
   @override
   void initState() {
     super.initState();
-    getCurrentTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      getCurrentTime();
-    });
+    updateTime();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) => updateTime());
   }
+
   @override
   void dispose() {
     _timer.cancel();
     super.dispose();
   }
 
-  void getCurrentTime() {
-    final now = DateTime.now();
-    final formatter = DateFormat('kk:mm:ss');
-    setState(() {
-      formattedTime = formatter.format(now);
-    });
-  }
-
-
+  @override
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final orientation = MediaQuery.of(context).orientation;
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
-    final isDesktop = Responsive.isDesktop(context);
 
-
-    QuranCover reading = QuranCover();
-    var overlayController=OverlayPortalController();
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
+
+    QuranCover reading = QuranCover();
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(isMobile ? 'Quran' : 'Al-Quran'),
+        title: Text(isMobile ? 'Al-Quran' : 'Quran'),
         actions: [
-
-
           PopupMenuButton(
             itemBuilder: (context) => [
-               PopupMenuItem(
-                value: 1,
-                // row with 2 children
-                child:  IconButton(
+              PopupMenuItem(
+                child: IconButton(
                   icon: Icon(
                     isDarkTheme ? Icons.dark_mode : Icons.light_mode,
                   ),
                   onPressed: themeNotifier.toggleTheme,
                 ),
-
-
-
               ),
               PopupMenuItem(
-                value: 1,
-                // row with 2 children
                 child: ElevatedButton(
-                  onPressed: overlayController.toggle,
-                  child: OverlayPortal(
-                    controller: overlayController, overlayChildBuilder: (BuildContext context) {
-                    return Positioned(
-                      top: 250,
-                      right: isMobile ? 40 : 20,
-                      child: Container
-                        (
-                        decoration: const BoxDecoration(
-                            color: Colors.cyan,
-                            borderRadius: BorderRadius.all(Radius.circular(10))
-                        ),
-                        //color: Colors.green,
-                        height: 320,
-                        width: 300,
-                        child:  const Column(
-                          children: [
-                            // const SizedBox(height: 140,),
-                            Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Universal Quran\nQuran in major Languages of the world',
-                                style: TextStyle(color: Colors.white),),
-                            ),
-                            Image(image: AssetImage('assets/images/overlay.png', ), height: 180,width: 260,),
-                            SizedBox(height: 2,),
-                            Text('Version 1.0.1\nDeveloper:universalquran24@gmail.com\nMay Allah SWT forgive my parent & all Muslims', style: TextStyle(color: Colors.white))
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                    child: const Text('App Info'),
-                  ),
-                ),
-              ),
-              PopupMenuItem(
-                  child: ElevatedButton(onPressed: () {
+                  onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const  SettingsPageScreen(),
-                      ),
+                          builder: (context) => const SettingsPageScreen()),
                     );
-                  }, child: const Text('Settings'),)
+                  },
+                  child: const Text('Settings'),
+                ),
               ),
               PopupMenuItem(
-                child:  ElevatedButton(onPressed: () {
-                  shareApp(context);
-                }, child: const Icon(Icons.share,size: 30,)),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Share.share(
+                        'Check out this amazing Quran app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui',
+                        subject: 'Share the App');
+                  },
+                  child: const Icon(Icons.share, size: 30),
+                ),
               ),
             ],
           ),
         ],
-
       ),
-      body: Container(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: const AssetImage(
-              'assets/images/mosque4.jpg',
-            ),
-            fit: BoxFit.fill,
-            colorFilter: ColorFilter.mode(
-                Colors.white.withOpacity(0.7), BlendMode.dstATop),
-          ),
-          borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20)),
-          //color:gridContainerColor,
-        ),
-        child: Column(
-          children: [
-            const SizedBox.square(
-              dimension: 80,
-            ),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          final crossAxisCount = orientation == Orientation.portrait
+              ? (isMobile ? 3 : isTablet ? 4 : 5)
+              : (isMobile ? 4 : isTablet ? 5 : 6);
 
-
-
-            Center(
-              child: Text(
-                 formattedTime,
-                style: GoogleFonts.allura(
-                  textStyle: TextStyle(
-                      color: Colors.blue.shade100,
-                      fontSize: isMobile ? 60 : 80,
-                      fontWeight: FontWeight.bold),
-                ),
+          return Container(
+            height: screenHeight,
+            width: screenWidth,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/mosque4.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                    Colors.white.withOpacity(0.7), BlendMode.dstATop),
               ),
             ),
-
-            Center(
-              child: Text(
-                today.fullDate().toString(),
-                style: GoogleFonts.roboto(
-                  textStyle: const TextStyle(
+            child: Column(
+              children: [
+                SizedBox(height: screenHeight * 0.1),
+                Text(
+                  formattedTime,
+                  style: GoogleFonts.allura(
+                    textStyle: TextStyle(
+                      color: Colors.blue.shade100,
+                      fontSize: isMobile ? 50 : isTablet ? 60 : 70,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  today.fullDate().toString(),
+                  style: GoogleFonts.roboto(
+                    textStyle: const TextStyle(
                       color: Colors.amber,
                       fontSize: 20,
-                      fontWeight: FontWeight.bold),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 140),
-              child: Row(
-                children: [
-                  Text(
-                    DateFormat.LLLL().format(DateTime.now()),
-                    style: GoogleFonts.roboto(
-                      textStyle: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 140),
+                  child: Row(
+                    children: [
+                      Text(
+                        DateFormat.LLLL().format(DateTime.now()),
+                        style: GoogleFonts.roboto(
+                          textStyle: const TextStyle(
+                              color: Colors.amber,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Text(
+                        " ${selectedDate.year} ${selectedDate.day}",
+                        style: GoogleFonts.roboto(
+                          textStyle: const TextStyle(
+                              color: Colors.amber,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    " ${selectedDate.year} ${selectedDate.day}",
-                    style: GoogleFonts.roboto(
-                      textStyle: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(33.0),
-                child: GridView.builder(
+                ),
+                const SizedBox(height: 30),
+                Expanded(
+                  child: GridView.builder(
                     itemCount: reading.readingActivity.length,
-                    shrinkWrap: true,
-                    physics: const ScrollPhysics(),
-                    gridDelegate:
-                        SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:  isMobile ? 3 : isTablet ? 3 : 4,
-                            childAspectRatio: isMobile ? 0.9 : 0.8,
-                            crossAxisSpacing: 5,
-                            mainAxisSpacing: 6),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      childAspectRatio: isMobile
+                          ? 0.9
+                          : isTablet
+                          ? 1.0
+                          : 0.8,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
                     itemBuilder: (context, index) => InkWell(
-                          onTap: () => quranPageNavigation(index),
-                          child: CustomCard(
-                            color: backGroundColor,
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  reading.readingActivity[index].icon,
-                                  height: isMobile ? 50 : 60,
-                                  width: isMobile ? 50 : 60,
-                                ),
-
-                                // Padding(
-                                //   padding: const EdgeInsets.only(bottom: 4, top: 15),
-                                //   child: Text(reading.readingActivity[index].value, style: const TextStyle(
-                                //     fontSize: 18,
-                                //     color: Colors.white,
-                                //     fontWeight: FontWeight.w600,
-                                //   ),),
-                                // ),
-                                Text(
-                                  reading.readingActivity[index].title,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.amber,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
+                      onTap: () => quranPageNavigation(index),
+                      child: CustomCard(
+                        color: backGroundColor,
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              reading.readingActivity[index].icon,
+                              height: isMobile ? 50 : isTablet ? 60 : 70,
+                              width: isMobile ? 50 : isTablet ? 60 : 70,
                             ),
-                          ),
-                        )),
-              ),
+                            Text(
+                              reading.readingActivity[index].title,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.amber,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
+

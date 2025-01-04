@@ -236,6 +236,57 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       isNotificationInitialized = true;
     });
   }
+  // Future<void> scheduleAzanNotification(
+  //     String prayerName,
+  //     DateTime prayerTime, {
+  //       required bool sound,
+  //       required bool vibrate,
+  //     }) async {
+  //   if (!isNotificationInitialized || kIsWeb) return;
+  //   // Request exact alarm permission if not already granted
+  //   final exactAlarmPermissionGranted = await requestExactAlarmPermission();
+  //   if (!exactAlarmPermissionGranted) {
+  //     print('Cannot schedule $prayerName notification: Exact Alarm permission is not granted.');
+  //     return;
+  //   }
+  //
+  //   final int notificationId = prayerName.hashCode;
+  //   tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
+  //   final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+  //
+  //   // Check if scheduled time is in the past, and if so, schedule it for the next day.
+  //   if (scheduledDate.isBefore(now)) {
+  //     scheduledDate = scheduledDate.add(const Duration(days: 1));
+  //     print('Rescheduled $prayerName notification for the next day at $scheduledDate');
+  //   }
+  //
+  //   try {
+  //     await flutterLocalNotificationsPlugin.zonedSchedule(
+  //       notificationId,
+  //       'Prayer Time',
+  //       'It is time for $prayerName prayer',
+  //       scheduledDate,
+  //       NotificationDetails(
+  //         android: AndroidNotificationDetails(
+  //           'azan_channel_id',
+  //           'Prayer Times',
+  //           channelDescription: 'Notifications for prayer times',
+  //           importance: Importance.max,
+  //           priority: Priority.high,
+  //           sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
+  //           playSound: sound,
+  //           enableVibration: vibrate,
+  //         ),
+  //       ),
+  //       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+  //
+  //       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+  //       matchDateTimeComponents: DateTimeComponents.time,
+  //     );
+  //   } catch (e) {
+  //     print('Error scheduling notification: $e');
+  //   }
+  // }
   Future<void> scheduleAzanNotification(
       String prayerName,
       DateTime prayerTime, {
@@ -243,21 +294,13 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         required bool vibrate,
       }) async {
     if (!isNotificationInitialized || kIsWeb) return;
-    // Request exact alarm permission if not already granted
-    final exactAlarmPermissionGranted = await requestExactAlarmPermission();
-    if (!exactAlarmPermissionGranted) {
-      print('Cannot schedule $prayerName notification: Exact Alarm permission is not granted.');
-      return;
-    }
 
     final int notificationId = prayerName.hashCode;
     tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
 
-    // Check if scheduled time is in the past, and if so, schedule it for the next day.
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
-      print('Rescheduled $prayerName notification for the next day at $scheduledDate');
     }
 
     try {
@@ -267,19 +310,24 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         'It is time for $prayerName prayer',
         scheduledDate,
         NotificationDetails(
-          android: AndroidNotificationDetails(
-            'azan_channel_id',
-            'Prayer Times',
-            channelDescription: 'Notifications for prayer times',
-            importance: Importance.max,
-            priority: Priority.high,
-            sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
-            playSound: sound,
-            enableVibration: vibrate,
-          ),
+            android: AndroidNotificationDetails(
+              'azan_channel_id',
+              'Prayer Times',
+              channelDescription: 'Notifications for prayer times',
+              importance: Importance.max,
+              priority: Priority.high,
+              sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
+              playSound: sound,
+              enableVibration: vibrate,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: sound,
+              sound: sound ? 'azan.mp3' : null,
+            )
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
@@ -413,18 +461,29 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
   void initState() {
     super.initState();
 
+    if (Platform.isIOS) {
+      _requestIOSPermissions();
+    }
 
-
-    super.initState();
     tz.initializeTimeZones();
     initializeNotifications();
     getCurrentPosition();
     loadNotificationModePreference();
-    requestExactAlarmPermission();
-    handleNotificationPermission();
 
-
+    if (Platform.isAndroid) {
+      requestExactAlarmPermission();
     }
+    handleNotificationPermission();
+  }
+  Future<void> _requestIOSPermissions() async {
+    await flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+    IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+    alert: true,
+    badge: true,
+    sound: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
