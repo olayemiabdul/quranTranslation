@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -54,33 +54,33 @@ class SettingsPageScreen extends StatelessWidget {
   }
 
 
-  deleteAccount(BuildContext context) async {
-    try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.delete();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account deleted successfully.')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Container(
-            height: 120,
-            width: 200,
-            //color: Colors.white,
-            child: Center(child: Text('Failed to delete account: $e')))),
-      );
-    }
-  }
+  // deleteAccount(BuildContext context) async {
+  //   try {
+  //     User? user = FirebaseAuth.instance.currentUser;
+  //     if (user != null) {
+  //       await user.delete();
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Account deleted successfully.')),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Container(
+  //           height: 120,
+  //           width: 200,
+  //           //color: Colors.white,
+  //           child: Center(child: Text('Failed to delete account: $e')))),
+  //     );
+  //   }
+  // }
 
-  logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logged out successfully.')),
-    );
-    // Navigate to login screen if needed
-  }
+  // logout(BuildContext context) async {
+  //   await FirebaseAuth.instance.signOut();
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(content: Text('Logged out successfully.')),
+  //   );
+  //   // Navigate to login screen if needed
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -113,14 +113,14 @@ class SettingsPageScreen extends StatelessWidget {
             title: const Text('Share App'),
             onTap: () => shareApp(context),
           ),
-          ListTile(
-            title: const Text('Delete Account'),
-            onTap: () => deleteAccount(context),
-          ),
-          ListTile(
-            title: const Text('Logout'),
-            onTap: () => logout(context),
-          ),
+          // ListTile(
+          //   title: const Text('Delete Account'),
+          //   onTap: () => deleteAccount(context),
+          // ),
+          // ListTile(
+          //   title: const Text('Logout'),
+          //   onTap: () => logout(context),
+          // ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:quran_complete_ui/constant.dart';
+import 'package:universal_quran/constant.dart';
+
 
 class CustomCard extends StatelessWidget {
   const CustomCard({super.key, required this.child, this.color, this.padding});

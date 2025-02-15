@@ -1,5 +1,6 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
@@ -18,10 +19,10 @@
 
 
     <application
-        android:label="Universal Quran"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon"
-        android:enableOnBackInvokedCallback="true">
+
+        android:icon="@mipmap/ic_launcher"
+        android:label="Universal Quran">
 
 
 

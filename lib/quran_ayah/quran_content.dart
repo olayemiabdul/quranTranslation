@@ -1,6 +1,8 @@
 
 
-import 'package:quran_complete_ui/quran_ayah/surah_class.dart';
+
+
+import 'package:universal_quran/quran_ayah/surah_class.dart';
 
 class QuranPage {
   final int pageNumber;

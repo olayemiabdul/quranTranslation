@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quran_translation_package/quran_translation_content.dart';
+import 'package:universal_quran/quran_translation_package/quran_translation_content.dart';
 
 import '../provider/theme_provider.dart';
 import '../responsiveness/responsive.dart';

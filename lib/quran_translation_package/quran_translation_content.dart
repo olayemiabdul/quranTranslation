@@ -2,8 +2,10 @@
 
 
 
-import 'package:quran_complete_ui/quran_translation_package/translations_model_class.dart';
 
+
+
+import 'package:universal_quran/quran_translation_package/translations_model_class.dart';
 
 class QuranPageTranslation {
   final int pageNumber;

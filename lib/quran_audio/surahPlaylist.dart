@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 
-import 'package:quran_complete_ui/dropdown_class/reciter_list.dart';
 
+
+import '../dropdown_class/reciter_list.dart';
 import '../model/Audio_model.dart';
 import '../provider/theme_provider.dart';
 import 'audio_player.dart';

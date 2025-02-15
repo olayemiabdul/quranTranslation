@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quranText_UrduTranslation/Urdu_Model_Class.dart';
-import 'package:quran_complete_ui/quranText_UrduTranslation/Urdu_translation_content.dart';
-import 'package:quran_complete_ui/quranText_UrduTranslation/urdu_ayahTranslation_text.dart';
+import 'package:universal_quran/quranText_UrduTranslation/urdu_ayahTranslation_text.dart';
 
 
 
@@ -10,6 +8,8 @@ import 'package:quran_complete_ui/quranText_UrduTranslation/urdu_ayahTranslation
 
 import '../provider/theme_provider.dart';
 import '../responsiveness/responsive.dart';
+import 'Urdu_Model_Class.dart';
+import 'Urdu_translation_content.dart';
 
 
 

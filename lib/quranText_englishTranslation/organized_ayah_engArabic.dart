@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quranText_englishTranslation/eng_arabic_model_class.dart';
-import 'package:quran_complete_ui/quranText_englishTranslation/quran_content_engArabic.dart';
+import 'package:universal_quran/quranText_englishTranslation/quran_content_engArabic.dart';
 
 import '../provider/theme_provider.dart';
 import '../responsiveness/responsive.dart';
+import 'eng_arabic_model_class.dart';
 import 'eng_arabic_text_page.dart';
 
 class OrganizedEngArabicAyahViewScreen extends StatefulWidget {

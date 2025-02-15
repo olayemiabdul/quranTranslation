@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:quran_complete_ui/provider/theme_provider.dart';
+import 'package:universal_quran/provider/theme_provider.dart';
+import 'package:universal_quran/widget/widget_data.dart';
+
 
 import 'firebase_options.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,7 +13,7 @@ import 'package:flutter/material.dart';
 
 
 
-import 'package:quran_complete_ui/widget/widget_data.dart';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:provider/provider.dart';
@@ -35,13 +37,21 @@ void main() async {
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
-    iOS: initializationSettingsIOS, // Use DarwinInitializationSettings here
+    iOS: initializationSettingsIOS,
   );
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  // Add error handling for Firebase initialization
+  try {
+    if (Firebase.apps.isEmpty) {  // Only initialize if no Firebase app exists
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    print('Firebase initialization error: $e');
+  }
 
   runApp(ChangeNotifierProvider(
     create: (_) => ThemeNotifier(),

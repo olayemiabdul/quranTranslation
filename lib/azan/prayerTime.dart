@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:quran_complete_ui/constant.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../constant.dart';
 import '../dropdown_class/calculation_methods.dart';
 import '../model/prayer_time_model.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';

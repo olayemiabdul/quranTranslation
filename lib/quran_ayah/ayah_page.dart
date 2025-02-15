@@ -1,9 +1,10 @@
 import 'package:arabic_numbers/arabic_numbers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:universal_quran/quran_ayah/quran_content.dart';
 import '../provider/theme_provider.dart';
 
-import 'package:quran_complete_ui/quran_ayah/quran_content.dart';
+
 
 import '../responsiveness/responsive.dart';
 

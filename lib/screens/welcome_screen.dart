@@ -5,8 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:pray_times/pray_times.dart';
-import 'package:quran_complete_ui/constant.dart';
+
+
+import 'package:universal_quran/constant.dart';
 
 
 import '../azan/notification_class.dart';
@@ -48,13 +49,8 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
   // }
   @override
   Widget build(BuildContext context) {
-    PrayerTimes prayers = PrayerTimes();
-    prayers.setTimeFormat(prayers.Time24);
-    prayers.setCalcMethod(prayers.MWL);
-    prayers.setAsrJuristic(prayers.Shafii);
-    prayers.setAdjustHighLats(prayers.AngleBased);
-    var offsets = [0, 0, 0, 0, 0, 0, 0];
-    prayers.tune(offsets);
+
+
 
 
 

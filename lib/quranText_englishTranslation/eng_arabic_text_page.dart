@@ -2,7 +2,8 @@
 import 'package:arabic_numbers/arabic_numbers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quranText_englishTranslation/quran_content_engArabic.dart';
+import 'package:universal_quran/quranText_englishTranslation/quran_content_engArabic.dart';
+
 import '../provider/theme_provider.dart';
 import '../responsiveness/responsive.dart';
 

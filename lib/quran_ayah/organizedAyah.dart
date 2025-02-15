@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quran_ayah/quran_content.dart';
-import 'package:quran_complete_ui/quran_ayah/surah_class.dart';
+import 'package:universal_quran/quran_ayah/quran_content.dart';
+import 'package:universal_quran/quran_ayah/surah_class.dart';
+
 import '../provider/theme_provider.dart';
 import 'ayah_page.dart';
 

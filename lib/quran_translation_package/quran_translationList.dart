@@ -3,8 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:quran_complete_ui/quran_translation_package/translations_model_class.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_quran/quran_translation_package/translations_model_class.dart';
 
 import '../dropdown_class/translator_list.dart';
 import '../provider/theme_provider.dart';
