@@ -382,9 +382,9 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         style: const TextStyle(
           wordSpacing: 2,
           fontFamily: 'Kitab-Bold',
-          color: Colors.amberAccent,
+          color: Colors.black,
           fontSize: 20,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w900,
         ),
       ),
       subtitle: Text(
@@ -392,9 +392,9 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         style: const TextStyle(
           wordSpacing: 2,
           fontFamily: 'Kitab-Bold',
-          color: Colors.amberAccent,
+          color: Colors.black,
           fontSize: 20,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w900,
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -570,7 +570,7 @@ backgroundColor: gridContainerColor,
               alignment: Alignment.topLeft,
               child: Text(
                 'Change Calculation Method',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.green, fontSize: 20),
               ),
             ),
           ),
@@ -589,7 +589,7 @@ backgroundColor: gridContainerColor,
                 value: entry.value,
                 child: Text(
                   entry.key,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.green, fontSize: 20),
                 ),
               );
             }).toList(),

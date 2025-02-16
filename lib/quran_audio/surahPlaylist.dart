@@ -169,7 +169,7 @@ class _AudioSurahListState extends State<AudioSurahList> {
                           color: isDarkTheme ? Colors.white : Colors.black),
                     ),
                     style: TextStyle(
-                        color: isDarkTheme ? Colors.white : Colors.black87),
+                        color: isDarkTheme ? Colors.white : Colors.black),
                     isExpanded: true,
                     icon: const Icon(Icons.arrow_downward, color: Colors.amberAccent),
                     onChanged: (ReciterName? reciter) {
@@ -187,7 +187,7 @@ class _AudioSurahListState extends State<AudioSurahList> {
                             child: Text(
                               reciter.label,
                               style: TextStyle(
-                                color: isDarkTheme ? Colors.white : Colors.black87,
+                                color: isDarkTheme ? Colors.white : Colors.black,
                               ),
                             ),
                           );

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constant.dart';
+
 import '../dropdown_class/translator_list.dart';
 import '../provider/theme_provider.dart';
 import 'Urdu_Model_Class.dart';
@@ -76,7 +76,7 @@ class _QuranUrduTranslationListPageState extends State<QuranUrduTranslationListP
     return Scaffold(
       appBar: AppBar(
         title: const Text('URDU Quran Translation'),
-        backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
+        backgroundColor: isDarkTheme ? Colors.white : Colors.teal,
       ),
       body: quranTranslateData.isEmpty
           ? const Center(child: CircularProgressIndicator())

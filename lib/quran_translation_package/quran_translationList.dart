@@ -116,7 +116,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                   value: selectedTranslator,
                   hint: const Text("Select Language/Translator"),
                   //icon: const Icon(Icons.translate, color: Colors.teal),
-                  dropdownColor: isDarkTheme ? Colors.black54 : Colors.grey,
+                  dropdownColor: isDarkTheme ? Colors.black54 : Colors.white,
                   style: TextStyle(color: isDarkTheme ? Colors.white : Colors.black87),
                   isExpanded: true, // Fix overflow
                     onChanged: (TranslatorName? reciter) {
@@ -135,7 +135,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                       child: Text(
                         translator.label,
                         style: TextStyle(
-                          color: isDarkTheme ? Colors.white : Colors.black87,
+                          color: isDarkTheme ? Colors.white : Colors.black,fontSize: 20
                         ),
                       ),
                     );
@@ -152,7 +152,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
               itemBuilder: (context, index) {
                 final surah = quranTranslateData[index];
                 return Card(
-                  color: isDarkTheme ? Colors.grey[850] : Colors.white,
+                  color: isDarkTheme ? Colors.grey : Colors.white,
                   child: ListTile(
                     title: Text(
                       'Page ${surah.ayahsEA.first.page}: ${surah.englishNameTranslation}',

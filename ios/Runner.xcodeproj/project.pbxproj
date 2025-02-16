@@ -495,7 +495,7 @@
 				DRIVERKIT_DEPLOYMENT_TARGET = 19.0;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "The universal Quran";
+				INFOPLIST_KEY_CFBundleDisplayName = "universal Quran";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -691,7 +691,7 @@
 				DRIVERKIT_DEPLOYMENT_TARGET = 19.0;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "The universal Quran";
+				INFOPLIST_KEY_CFBundleDisplayName = "universal Quran";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -726,7 +726,7 @@
 				DRIVERKIT_DEPLOYMENT_TARGET = 19.0;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "The universal Quran";
+				INFOPLIST_KEY_CFBundleDisplayName = "universal Quran";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.1;
 				LD_RUNPATH_SEARCH_PATHS = (
