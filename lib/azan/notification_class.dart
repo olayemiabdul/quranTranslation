@@ -25,6 +25,13 @@ class NotificationApi {
         onSelectNotifications.add(payload.payload);
       },
     );
+    await _notifications
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
     if (initScheduled) {
       tz.initializeTimeZones();
