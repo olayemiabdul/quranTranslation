@@ -27,13 +27,12 @@ class EngArabicTextPageNew extends StatelessWidget {
     bool isTablet = screenWidth >= 600 && screenWidth < 1200;
     bool isDesktop = screenWidth >= 1200;
 
-    // Calculate font sizes based on screen height
+
     double fontSize = screenHeight * (isMobile ? 0.025 : isTablet ? 0.028 : 0.032);
     double bismillahFontSize = fontSize * 1.2;
-    double surahNameFontSize = fontSize * 1.3;
 
-    // Adjust line height and padding based on screen size
-    double lineHeight = isMobile ? 2.0 : isTablet ? 2.2 : 2.4;
+
+
     double horizontalPadding = screenWidth * (isMobile ? 0.04 : isTablet ? 0.06 : 0.08);
 
     return SizedBox(
@@ -59,8 +58,8 @@ class EngArabicTextPageNew extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isDarkTheme
-                          ? Colors.grey.shade800.withOpacity(0.85)
-                          : Colors.grey.shade200.withOpacity(0.85),
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDarkTheme ? Colors.grey.shade600 : Colors.grey.shade400,

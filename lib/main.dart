@@ -6,7 +6,7 @@ import 'package:universal_quran/widget/widget_data.dart';
 
 
 import 'firebase_options.dart';
-import 'package:flutter/cupertino.dart';
+
 
 import 'package:flutter/material.dart';
 
@@ -20,7 +20,7 @@ import 'package:provider/provider.dart';
 
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark); // Initial mode is dark
+final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +50,7 @@ void main() async {
       );
     }
   } catch (e) {
-    print('Firebase initialization error: $e');
+
   }
 
   runApp(ChangeNotifierProvider(

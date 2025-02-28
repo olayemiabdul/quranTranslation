@@ -1,7 +1,3 @@
-
-
-
-
 class Surah {
   final int number;
   final String name;
@@ -46,7 +42,7 @@ class Ayah {
   final int? page;
   final int? ruku;
   final int? hizbQuarter;
-  final dynamic? sajda;
+  final dynamic sajda;
 
   factory Ayah.fromJson(Map<String, dynamic> json){
     return Ayah(

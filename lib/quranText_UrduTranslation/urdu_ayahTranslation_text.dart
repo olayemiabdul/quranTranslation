@@ -1,10 +1,8 @@
-
-import 'package:arabic_numbers/arabic_numbers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../provider/theme_provider.dart';
-import '../quranText_englishTranslation/eng_arabic_model_class.dart';
+
 import 'Urdu_translation_content.dart';
 
 
@@ -17,7 +15,7 @@ class UrduTranslationTextPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ArabicNumbers arabicNumber = ArabicNumbers();
+
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
 // Get screen dimensions
@@ -32,11 +30,10 @@ class UrduTranslationTextPage extends StatelessWidget {
 
     // Calculate font sizes based on screen height
     double fontSize = screenHeight * (isMobile ? 0.025 : isTablet ? 0.028 : 0.032);
-    double bismillahFontSize = fontSize * 1.2;
-    double surahNameFontSize = fontSize * 1.3;
+
 
     // Adjust line height and padding based on screen size
-    double lineHeight = isMobile ? 2.0 : isTablet ? 2.2 : 2.4;
+
     double horizontalPadding = screenWidth * (isMobile ? 0.04 : isTablet ? 0.06 : 0.08);
 
     return SizedBox(
@@ -59,8 +56,8 @@ class UrduTranslationTextPage extends StatelessWidget {
                     padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: isDarkTheme
-                          ? Colors.grey.shade800.withOpacity(0.85)
-                          : Colors.grey.shade200.withOpacity(0.85),
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDarkTheme ? Colors.grey.shade600 : Colors.grey.shade400,
@@ -124,7 +121,7 @@ class UrduTranslationTextPage extends StatelessWidget {
                                   ),
                                   TextSpan(
                                     text:
-                                    '${(ayah.numberInSurah)} ${(ayah ).translation?.translation ?? ''.replaceFirst("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", "").trim()} ',
+                                    '${(ayah.numberInSurah)} ${(ayah ).translation.translation .replaceFirst("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", "").trim()} ',
                                     style: TextStyle(
                                       fontSize: fontSize,
                                       fontFamily: 'Kitab-Bold',
@@ -135,7 +132,7 @@ class UrduTranslationTextPage extends StatelessWidget {
                                 ] else ...[
                                   TextSpan(
                                     text:
-                                    '${(ayah.numberInSurah)} ${(ayah ).translation?.translation ?? ''} ',
+                                    '${(ayah.numberInSurah)} ${(ayah ).translation.translation } ',
                                     style:TextStyle(
                                       fontSize: fontSize,
                                       fontFamily: 'Roboto',

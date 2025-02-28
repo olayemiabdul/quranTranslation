@@ -45,8 +45,8 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
   String? currentCountry;
   bool soundEnabled = true;
   String date = DateTime.now().toIso8601String().split('T')[0];
-  String notificationMode = 'Beep'; // Default to 'Beep' to choose azan notification
-  int selectedCalculationMethod = 3; // Default to Muslim World League
+  String notificationMode = 'Beep';
+  int selectedCalculationMethod = 3;
   bool isNotificationInitialized = false;
 
 
@@ -125,26 +125,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     }
   }
 
-  // Future<void> handleNotificationPermission() async {
-  //   PermissionStatus status = await Permission.notification.status;
-  //
-  //   if (!status.isGranted) {
-  //     status = await Permission.notification.request();
-  //   }
-  //
-  //   if (status.isGranted) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Notification permissions are granted')));
-  //   } else if (status.isDenied) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Notification permissions are denied')));
-  //   } else if (status.isPermanentlyDenied) {
-  //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-  //         content: Text(
-  //             'Notification permissions are permanently denied. Please enable them in settings.')));
-  //     await openAppSettings();
-  //   }
-  // }
+
 
   Future<void> getCurrentPosition() async {
     final hasPermission = await _handleLocationPermission();
@@ -170,8 +151,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         currentAddress = '${place.subLocality ?? ''}, ${place.subAdministrativeArea ?? ''}, ${place.postalCode ?? ''}';
         currentCity = place.subAdministrativeArea;
         currentCountry = place.country;
-        print(currentCity);
-        print(currentCountry);
+
         getPrayerTimes();  // Fetch prayer times once city and country are obtained
       });
     }).catchError((e) {
@@ -188,7 +168,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     String date = DateTime.now().toIso8601String().split('T')[0]; // Today's date
     // int month=selectedDate.month;
     // int year=selectedDate.year;
-    print(date);
+
 
 
 
@@ -198,8 +178,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print(currentCity);
-      print(currentCountry);
+
       return PrayerDailyTimes.fromJson(data['data']['timings']);
 
     } else {
@@ -222,7 +201,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       if (await Permission.scheduleExactAlarm.isDenied) {
         final status = await Permission.scheduleExactAlarm.request();
         if (!status.isGranted) {
-          print('Exact Alarm permission denied. Redirecting to app settings...');
+
           await openAppSettings();
           return false;
         }
@@ -237,57 +216,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       isNotificationInitialized = true;
     });
   }
-  // Future<void> scheduleAzanNotification(
-  //     String prayerName,
-  //     DateTime prayerTime, {
-  //       required bool sound,
-  //       required bool vibrate,
-  //     }) async {
-  //   if (!isNotificationInitialized || kIsWeb) return;
-  //   // Request exact alarm permission if not already granted
-  //   final exactAlarmPermissionGranted = await requestExactAlarmPermission();
-  //   if (!exactAlarmPermissionGranted) {
-  //     print('Cannot schedule $prayerName notification: Exact Alarm permission is not granted.');
-  //     return;
-  //   }
-  //
-  //   final int notificationId = prayerName.hashCode;
-  //   tz.TZDateTime scheduledDate = tz.TZDateTime.from(prayerTime, tz.local);
-  //   final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-  //
-  //   // Check if scheduled time is in the past, and if so, schedule it for the next day.
-  //   if (scheduledDate.isBefore(now)) {
-  //     scheduledDate = scheduledDate.add(const Duration(days: 1));
-  //     print('Rescheduled $prayerName notification for the next day at $scheduledDate');
-  //   }
-  //
-  //   try {
-  //     await flutterLocalNotificationsPlugin.zonedSchedule(
-  //       notificationId,
-  //       'Prayer Time',
-  //       'It is time for $prayerName prayer',
-  //       scheduledDate,
-  //       NotificationDetails(
-  //         android: AndroidNotificationDetails(
-  //           'azan_channel_id',
-  //           'Prayer Times',
-  //           channelDescription: 'Notifications for prayer times',
-  //           importance: Importance.max,
-  //           priority: Priority.high,
-  //           sound: sound ? const RawResourceAndroidNotificationSound('azan') : null,
-  //           playSound: sound,
-  //           enableVibration: vibrate,
-  //         ),
-  //       ),
-  //       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-  //
-  //       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-  //       matchDateTimeComponents: DateTimeComponents.time,
-  //     );
-  //   } catch (e) {
-  //     print('Error scheduling notification: $e');
-  //   }
-  // }
+
   Future<void> scheduleAzanNotification(
       String prayerName,
       DateTime prayerTime, {
@@ -333,7 +262,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
         matchDateTimeComponents: DateTimeComponents.time,
       );
     } catch (e) {
-      print('Error scheduling notification: $e');
+
     }
   }
 
@@ -341,7 +270,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Map of prayer times
+
     final prayerMap = {
       'Fajr': prayerTimes.fajr,
       'Dhuhr': prayerTimes.dhuhr,
@@ -350,7 +279,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
       'Isha': prayerTimes.isha,
     };
 
-    // Schedule notifications for each prayer time
+
     prayerMap.forEach((name, timeStr) {
       try {
         final List<String> timeParts = timeStr.split(':');
@@ -362,16 +291,14 @@ class _PrayerTimePageState extends State<PrayerTimePage> {
           int.parse(timeParts[1]),
         );
 
-        // Schedule notification for each prayer time
+
         scheduleAzanNotification(
           name,
           prayerDateTime,
           sound: notificationMode == 'sound',
           vibrate: notificationMode == 'vibrate',
         );
-      } catch (e) {
-        print('Error scheduling $name notification: $e');
-      }
+      } catch (e) {}
     });
   }
 
