@@ -14,33 +14,21 @@ import 'package:flutter/material.dart';
 
 
 
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:provider/provider.dart';
 
+import 'azan/azan_service.dart';
+import 'quran_byPage/quran_pages.dart' show bootQcfFonts;
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  tz.initializeTimeZones();
-
-  const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
-  );
-
-  const InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: initializationSettingsIOS,
-  );
-
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // One place owns notifications now (see azan/azan_service.dart).
+  await AzanService.instance.init();
+  // Refresh the week of adhan alarms in the background on every launch.
+  unawaited(AzanService.instance.rescheduleFromSaved());
+  // Unpack/load the Madinah Mushaf page fonts in the background.
+  unawaited(bootQcfFonts());
 
   // Add error handling for Firebase initialization
   try {
@@ -106,7 +94,7 @@ class _ShowUpAnimationState extends State<ShowUpAnimation>
   late Animation<Offset> animOffset;
 
   /// CREATING THE TIMER VARIABLE
-  late Timer timer;
+  Timer? timer;
 
   @override
   void initState() {
@@ -130,9 +118,9 @@ class _ShowUpAnimationState extends State<ShowUpAnimation>
 
   @override
   void dispose() {
-    super.dispose();
+    timer?.cancel(); // was 'late' and crashed when no delay was set
     animController.dispose();
-    timer.cancel();
+    super.dispose();
   }
 
   @override
