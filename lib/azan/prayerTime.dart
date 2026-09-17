@@ -91,7 +91,11 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
               .where((e) => e != null && e.isNotEmpty)
               .take(2)
               .join(', ');
-        } catch (_) {}
+        } catch (_) {
+          // Reverse geocoding is best-effort only: prayer times still work
+          // from coordinates alone, so a failure here just leaves the
+          // location label blank rather than blocking anything.
+        }
         await _svc.saveLocation(pos.latitude, pos.longitude, label);
         _place = label;
       }

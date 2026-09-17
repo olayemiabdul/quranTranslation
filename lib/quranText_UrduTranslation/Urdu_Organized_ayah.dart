@@ -18,7 +18,7 @@ class UrduOrganizedTranslationAyahViewScreen extends StatefulWidget {
   final List<UrduSurahClass> surahs;
   final int initialPage;
 
-  UrduOrganizedTranslationAyahViewScreen({
+  const UrduOrganizedTranslationAyahViewScreen({super.key, 
     required this.surahs,
     this.initialPage = 1,
   });
@@ -54,7 +54,7 @@ class _UrduOrganizedTranslationAyahViewScreenState extends State<UrduOrganizedTr
       for (var ayahEA in surah.ayahsUA) {
 
         pageContent[ayahEA.page] ??= [];
-        bool isNewSurah = surah.ayahsUA == ayahEA;
+        bool isNewSurah = ayahEA.numberInSurah == 1;
         UrduPageContentTranslation? existingContent = pageContent[ayahEA.page]!.firstWhere(
               (content) => content.englishName == surah.englishName,
           orElse: () {

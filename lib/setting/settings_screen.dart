@@ -33,9 +33,9 @@ class SettingsPageScreen extends StatelessWidget {
 
 
   rateUs() async {
-    const url = 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'; //  app's Play Store URL
-    if (await canLaunch(url)) {
-      await launch(url);
+    final Uri url = Uri.parse('https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'); //  app's Play Store URL
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       throw 'Could not launch $url';
     }

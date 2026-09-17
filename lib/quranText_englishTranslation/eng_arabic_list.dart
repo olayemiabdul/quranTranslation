@@ -37,17 +37,33 @@ class _EngArabicTextSurahListPageNewState extends State<EngArabicTextSurahListPa
         isLoading = false;
       });
     } else {
-      final arabicResponse = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"));
-      final englishResponse = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"));
+      try {
+        final arabicResponse = await http
+            .get(Uri.parse("https://api.alquran.cloud/v1/quran/quran-uthmani"))
+            .timeout(const Duration(seconds: 15));
+        final englishResponse = await http
+            .get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"))
+            .timeout(const Duration(seconds: 15));
 
-      if (arabicResponse.statusCode == 200 && englishResponse.statusCode == 200) {
-        prefs.setString('quranArabicData', arabicResponse.body);
-        prefs.setString('quranEnglishData', englishResponse.body);
+        if (arabicResponse.statusCode == 200 && englishResponse.statusCode == 200) {
+          prefs.setString('quranArabicData', arabicResponse.body);
+          prefs.setString('quranEnglishData', englishResponse.body);
 
-        setState(() {
-          surahs = parseSurahData(arabicResponse.body, englishResponse.body);
-          isLoading = false;
-        });
+          setState(() {
+            surahs = parseSurahData(arabicResponse.body, englishResponse.body);
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to load data');
+        }
+      } catch (e) {
+        debugPrint('Error fetching English/Arabic text: $e');
+        setState(() => isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Could not load the Quran text. Check your connection and try again.'),
+          ));
+        }
       }
     }
   }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -45,7 +44,9 @@ class _QuranUrduTranslationListPageState extends State<QuranUrduTranslationListP
               .toList();
         });
       } else {
-        final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/ur.ahmedali"));
+        final response = await http
+            .get(Uri.parse("https://api.alquran.cloud/v1/quran/ur.ahmedali"))
+            .timeout(const Duration(seconds: 15));
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body)['data']['surahs'] as List;
@@ -62,7 +63,12 @@ class _QuranUrduTranslationListPageState extends State<QuranUrduTranslationListP
       setState(() {
         isLoading = false;
       });
-      print('Error fetching Quran data: $e');
+      debugPrint('Error fetching Quran data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not load the Urdu translation. Check your connection and try again.'),
+        ));
+      }
     }
   }
 

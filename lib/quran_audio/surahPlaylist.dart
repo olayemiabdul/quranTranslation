@@ -41,28 +41,17 @@ class _AudioSurahListState extends State<AudioSurahList> {
     super.dispose();
   }
   Future<void> getAudioReciterList() async {
-    const String url = 'https://api.alquran.cloud/v1/quran/ar.alafasy';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data']['surahs'] as List;
-        setState(() {
-          audioSurahs = data.map((json) => Surah.fromJson(json)).toList();
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load');
-      }
-    } catch (e) {
-      print("Error fetching audio for reciter: $e");
-    }
+    await getAudioSurahList('ar.alafasy');
   }
 
-  Future<void> getAudioSurahList(String reciter, String ayahNumber) async {
-    String url = 'https://api.alquran.cloud/v1/quran/$reciter??ar.alafasy/$ayahNumber.mp3';
+  /// Reloads the Surah list narrated by [reciterEdition] (falls back to
+  /// ar.alafasy), so each Ayah's audio URL matches the selected reciter.
+  Future<void> getAudioSurahList(String reciterEdition) async {
+    final edition = reciterEdition.isEmpty ? 'ar.alafasy' : reciterEdition;
+    final url = 'https://api.alquran.cloud/v1/quran/$edition';
+    setState(() => isLoading = true);
     try {
-      setState(() => isLoading = true);
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final data = json.decode(response.body)['data']['surahs'] as List;
         setState(() {
@@ -73,7 +62,13 @@ class _AudioSurahListState extends State<AudioSurahList> {
         throw Exception('Failed to load');
       }
     } catch (e) {
-      print("Error fetching surahs: $e");
+      debugPrint('Error fetching audio for reciter $edition: $e');
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not load reciter audio. Check your connection and try again.'),
+        ));
+      }
     }
   }
 
@@ -173,11 +168,9 @@ class _AudioSurahListState extends State<AudioSurahList> {
                     isExpanded: true,
                     icon: const Icon(Icons.arrow_downward, color: Colors.amberAccent),
                     onChanged: (ReciterName? reciter) {
-                      setState(() {
-                        selectedReciter = reciter;
-                      });
-                      final myAudioSurah=audioSurahs[index].ayahs[index].audio;
-                      getAudioSurahList(selectedReciter!.text, myAudioSurah.toString());
+                      if (reciter == null) return;
+                      setState(() => selectedReciter = reciter);
+                      getAudioSurahList(reciter.text);
                     },
                     items: ReciterName.values
                         .map<DropdownMenuItem<ReciterName>>(

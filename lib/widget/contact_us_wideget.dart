@@ -24,13 +24,15 @@ class _ContactUsPageState extends State<ContactUsPage> {
           'message': messageController.text,
           'timestamp': FieldValue.serverTimestamp(),
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks! Message sent successfully!')),
-        );
         nameController.clear();
         emailController.clear();
         messageController.clear();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thanks! Message sent successfully!')),
+        );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to send message: $e')),
         );

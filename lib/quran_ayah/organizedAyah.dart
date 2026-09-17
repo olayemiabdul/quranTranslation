@@ -113,13 +113,12 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isTablet = constraints.maxWidth > 600;
           return PageView.builder(
             reverse: true,
             controller: pageController,
             physics: Theme.of(context).platform == TargetPlatform.iOS
-                ? BouncingScrollPhysics()
-                : ClampingScrollPhysics(),
+                ? const BouncingScrollPhysics()
+                : const ClampingScrollPhysics(),
             itemCount: 604,
             onPageChanged: (page) {
               setState(() {

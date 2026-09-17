@@ -1,6 +1,3 @@
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class HajjActivity extends StatefulWidget {
@@ -61,14 +58,14 @@ class _HajjActivityState extends State<HajjActivity> {
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
                     child: Text(
-                        'Ibn ‘Abbaas, may Allah be pleased with him, said: "The Messenger of Allah, ${basmala}, said: Whoever wants to go for Hajj, let him hasten to do it, because he may fall ill or some other problems may arise.Reported by Abu Daawood, 1732.'),
+                        'Ibn ‘Abbaas, may Allah be pleased with him, said: "The Messenger of Allah, $basmala, said: Whoever wants to go for Hajj, let him hasten to do it, because he may fall ill or some other problems may arise.Reported by Abu Daawood, 1732.'),
                   ),
                 ),
                 const Text('kind of hajj'),
                 ListTile(
                     title: const Text('Hajj Tamattu'),
                     subtitle: Text(
-                        'The best of the kinds is Tamattu, which the Prophet ${basmala} himself recommends. Tamattu is when a pilgrim enters ihrām for Umrah during the months of Hajj (which are Shawwal, Dhu’l-Qa’dah and the first ten days of Dhu’l-Hijjah) and performs Umrah and exits ihrām, then he enters ihrām again for Hajj from Makkah or its environs on the day of al-Tarwiyah in the same year as his Umrah. Hajj Tamattu is also the popular form of hajj')),
+                        'The best of the kinds is Tamattu, which the Prophet $basmala himself recommends. Tamattu is when a pilgrim enters ihrām for Umrah during the months of Hajj (which are Shawwal, Dhu’l-Qa’dah and the first ten days of Dhu’l-Hijjah) and performs Umrah and exits ihrām, then he enters ihrām again for Hajj from Makkah or its environs on the day of al-Tarwiyah in the same year as his Umrah. Hajj Tamattu is also the popular form of hajj')),
               ],
             ),
             ListView(
@@ -498,7 +495,7 @@ class _HajjActivityState extends State<HajjActivity> {
             ),
             LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                return Container(
+                return SizedBox(
                   width: constraints.maxWidth * 0.8,
                   height: constraints.maxHeight * 0.8,
                   //color: Colors.white,
@@ -534,7 +531,7 @@ class _HajjActivityState extends State<HajjActivity> {
                       const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: Text(
-                            'The Haram of Makkah is a sacred area that extends several miles around Masjid al-Haram in all directions. In this area, it is forbidden to:\m'
+                            'The Haram of Makkah is a sacred area that extends several miles around Masjid al-Haram in all directions. In this area, it is forbidden to:m'
                             'Cut or damage grass, trees or any other type of vegetation.\n'
                             'Harm or kill wild animals. This includes scaring away pigeons and other birds.\n'
                             'Carry weapons.\n'
@@ -714,7 +711,7 @@ class _HajjActivityState extends State<HajjActivity> {
             LayoutBuilder(
 
               builder: (BuildContext context, BoxConstraints constraints) {
-                return  Container(
+                return  SizedBox(
                   width: constraints.maxWidth * 0.8,
                   height: constraints.maxHeight * 0.8,
 

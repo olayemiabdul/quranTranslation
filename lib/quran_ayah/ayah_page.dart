@@ -4,10 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:universal_quran/quran_ayah/quran_content.dart';
 import '../provider/theme_provider.dart';
 
-
-
-import '../responsiveness/responsive.dart';
-
 class AyahPageView extends StatelessWidget {
   final QuranPage page;
 
@@ -57,8 +53,8 @@ class AyahPageView extends StatelessWidget {
                     padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: isDarkTheme
-                          ? Colors.grey.shade800.withOpacity(0.85)
-                          : Colors.grey.shade200.withOpacity(0.85),
+                          ? Colors.grey.shade800.withValues(alpha: 0.85)
+                          : Colors.grey.shade200.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDarkTheme

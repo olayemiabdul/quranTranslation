@@ -47,7 +47,7 @@ class _OrganizedEngArabicAyahViewScreenState extends State<OrganizedEngArabicAya
       for (var ayahEA in surah.ayahsEA) {
 
         pageContent[ayahEA.page] ??= [];
-        bool isNewSurah = surah.ayahsEA == ayahEA;
+        bool isNewSurah = ayahEA.numberInSurah == 1;
         PageContentEngArabic? existingContent = pageContent[ayahEA.page]!.firstWhere(
               (content) => content.surahName == surah.name,
           orElse: () {

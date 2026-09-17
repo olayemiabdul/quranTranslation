@@ -38,7 +38,7 @@ void main() async {
       );
     }
   } catch (e) {
-
+    debugPrint('Firebase initialization failed: $e');
   }
 
   runApp(ChangeNotifierProvider(
@@ -66,7 +66,7 @@ class CompleteQuranApp extends StatelessWidget {
           ),
           darkTheme: ThemeData.light(),
           themeMode: themeMode, // Set the theme based on the ValueNotifier
-          home:ShowUpAnimation(child:const CoverPageDetail(),), // Main screen widget
+          home:const ShowUpAnimation(child:CoverPageDetail(),), // Main screen widget
         );
       },
     );
@@ -77,10 +77,9 @@ class CompleteQuranApp extends StatelessWidget {
 
 class ShowUpAnimation extends StatefulWidget {
   final Widget child;
+  final int? delay;
 
-  int? delay;
-
-  ShowUpAnimation({super.key, required this.child, this.delay});
+  const ShowUpAnimation({super.key, required this.child, this.delay});
 
   @override
   _ShowUpAnimationState createState() => _ShowUpAnimationState();

@@ -42,9 +42,9 @@ class _SurahListPageState extends State<SurahListPage> {
 
   Future<void> getAllSurah() async {
     try {
-      final response = await http.get(
-        Uri.parse('https://api.alquran.cloud/v1/quran/quran-uthmani'),
-      );
+      final response = await http
+          .get(Uri.parse('https://api.alquran.cloud/v1/quran/quran-uthmani'))
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -58,12 +58,19 @@ class _SurahListPageState extends State<SurahListPage> {
 
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('surahs', json.encode(surahsData));
+      } else {
+        throw Exception('Failed to load Quran data');
       }
     } catch (e) {
       setState(() {
         isLoading = false;
       });
-      print('Error fetching Quran data: $e');
+      debugPrint('Error fetching Quran data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not load the Surah list. Check your connection and try again.'),
+        ));
+      }
     }
   }
 

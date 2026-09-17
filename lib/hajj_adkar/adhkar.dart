@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class RemembrancePage extends StatelessWidget {
   const RemembrancePage({super.key});
@@ -21,7 +19,7 @@ class RemembrancePage extends StatelessWidget {
             ),
             fit: BoxFit.fill,
             colorFilter: ColorFilter.mode(
-                Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                Colors.white.withValues(alpha: 0.7), BlendMode.dstATop),
           ),
           borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),

@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
@@ -55,7 +53,7 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
 
 
     return  Scaffold(
-      appBar: AppBar(title: Text('gtt'),
+      appBar: AppBar(title: const Text('gtt'),
       backgroundColor: gridContainerColor,),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -402,9 +400,5 @@ class CustomClipPath extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper oldClipper) {
-    return false;
-    // TODO: implement shouldReclip
-    throw UnimplementedError();
-  }
+  bool shouldReclip(covariant CustomClipper oldClipper) => false;
 }

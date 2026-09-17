@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -44,7 +43,9 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
               .toList();
         });
       } else {
-        final response = await http.get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"));
+        final response = await http
+            .get(Uri.parse("https://api.alquran.cloud/v1/quran/en.ahmedali"))
+            .timeout(const Duration(seconds: 15));
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body)['data']['surahs'] as List;
@@ -61,22 +62,39 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
       setState(() {
         isLoading = false;
       });
-      print('Error fetching Quran data: $e');
+      debugPrint('Error fetching Quran data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not load the Quran text. Check your connection and try again.'),
+        ));
+      }
     }
   }
   // Method to fetch translation based on selected reciter
   Future<void> getQuranTranslationReciter(String reciter) async {
     setState(() => isLoading = true);
-    final response = await http.get(Uri.parse('https://api.alquran.cloud/v1/quran/$reciter'));
+    try {
+      final response = await http
+          .get(Uri.parse('https://api.alquran.cloud/v1/quran/$reciter'))
+          .timeout(const Duration(seconds: 15));
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body)['data']['surahs'] as List;
-      setState(() {
-        quranTranslateData = data.map((item) => TranslationSurahClass.fromJson(item)).toList();
-        isLoading = false;
-      });
-    } else {
-      throw Exception('Failed to load Quran data');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['data']['surahs'] as List;
+        setState(() {
+          quranTranslateData = data.map((item) => TranslationSurahClass.fromJson(item)).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load Quran data');
+      }
+    } catch (e) {
+      debugPrint('Error fetching translation: $e');
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not load that translation. Check your connection and try again.'),
+        ));
+      }
     }
   }
 
@@ -106,7 +124,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
+                      color: Colors.grey.withValues(alpha: 0.5),
                       blurRadius: 4,
                       offset: const Offset(0, 4),
                     ),

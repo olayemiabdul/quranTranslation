@@ -1,10 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_quran/quran_translation_package/quran_translation_content.dart';
 
 import '../provider/theme_provider.dart';
-import '../responsiveness/responsive.dart';
 
 class AllTranslationTextPage extends StatelessWidget {
   final QuranPageTranslation page;
@@ -25,11 +23,9 @@ class AllTranslationTextPage extends StatelessWidget {
 
     // Calculate font sizes based on screen height
     double fontSize = screenHeight * (isMobile ? 0.025 : isTablet ? 0.028 : 0.032);
-    double bismillahFontSize = fontSize * 1.2;
     double surahNameFontSize = fontSize * 1.3;
 
-    // Adjust line height and padding based on screen size
-    double lineHeight = isMobile ? 2.0 : isTablet ? 2.2 : 2.4;
+    // Adjust padding based on screen size
     double horizontalPadding = screenWidth * (isMobile ? 0.04 : isTablet ? 0.06 : 0.08);
 
     final themeNotifier = Provider.of<ThemeNotifier>(context);
@@ -54,8 +50,8 @@ class AllTranslationTextPage extends StatelessWidget {
                     padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
                     decoration: BoxDecoration(
                       color: isDarkTheme
-                          ? Colors.grey.shade800.withOpacity(0.85)
-                          : Colors.grey.shade200.withOpacity(0.85),
+                          ? Colors.grey.shade800.withValues(alpha: 0.85)
+                          : Colors.grey.shade200.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isDarkTheme
@@ -102,7 +98,7 @@ class AllTranslationTextPage extends StatelessWidget {
                               children: [
                                 TextSpan(
                                   text:
-                                  '${ayah.numberInSurah} ${(ayah.translation?.translation ?? '').trim()} ',
+                                  '${ayah.numberInSurah} ${ayah.translation.translation.trim()} ',
                                   style: TextStyle(
                                     fontSize: fontSize,
                                     fontFamily: 'Roboto',

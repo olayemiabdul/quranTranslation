@@ -13,7 +13,7 @@ class OrganizedTranslationAyahViewScreen extends StatefulWidget {
   final List<TranslationSurahClass> surahs;
   final int initialPage;
 
-  OrganizedTranslationAyahViewScreen({
+  const OrganizedTranslationAyahViewScreen({super.key, 
     required this.surahs,
     this.initialPage = 1,
   });
@@ -45,7 +45,7 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
     for (var surah in widget.surahs) {
       for (var ayahEA in surah.ayahsEA) {
         pageContent[ayahEA.page] ??= [];
-        bool isNewSurah = surah.ayahsEA == ayahEA;
+        bool isNewSurah = ayahEA.numberInSurah == 1;
         PageContentTranslation? existingContent = pageContent[ayahEA.page]!.firstWhere(
               (content) => content.englishName == surah.englishName,
           orElse: () {
@@ -89,7 +89,6 @@ class _OrganizedTranslationAyahViewScreenState extends State<OrganizedTranslatio
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
-    final isDesktop = Responsive.isDesktop(context);
 
     return Scaffold(
       appBar: AppBar(
