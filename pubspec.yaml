@@ -4,15 +4,15 @@ description: "A new Flutter project."
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.9+10
+version: 2.0.0+11
 
 
 environment:
-  sdk: '>=3.3.3 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
 ios:
   bundleIdentifier: tunedtech.uk.quranCompleteUi
-  version: '1.0.9'
-  buildNumber: '10'
+  version: '2.0.0'
+  buildNumber: '11'
 
 
 dependencies:
@@ -45,7 +45,7 @@ dependencies:
   shared_preferences: ^2.2.3
 
 
-  flutter_local_notifications:
+  flutter_local_notifications: ^18.0.1
 
   syncfusion_flutter_pdfviewer: ^25.2.5
   firebase_core: ^2.32.0
@@ -58,6 +58,9 @@ dependencies:
   rxdart: ^0.28.0
   audioplayers: ^6.1.0
   flutter_launcher_icons: ^0.14.3
+  timezone: ^0.10.0
+  qcf_quran_plus: ^0.0.8
+  scrollable_positioned_list: ^0.3.8
 
 flutter_launcher_icons:
     android: "launcher_icon"
