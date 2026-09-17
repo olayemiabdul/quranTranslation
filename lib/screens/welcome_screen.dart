@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:universal_quran/constant.dart';
 
 
-import '../azan/notification_class.dart';
 import '../quran_ayah/Surah_List.dart';
 
 import '../quran_translation_package/quran_translationList.dart';
