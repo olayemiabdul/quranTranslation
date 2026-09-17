@@ -311,7 +311,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
 
   Widget _methodPicker() {
     return DropdownButtonFormField<int>(
-      value: calculationMethods.containsValue(_method) ? _method : null,
+      initialValue: calculationMethods.containsValue(_method) ? _method : null,
       isExpanded: true,
       decoration: const InputDecoration(
         labelText: 'Calculation method',
