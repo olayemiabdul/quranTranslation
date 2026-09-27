@@ -1,169 +1,278 @@
-import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../provider/theme_provider.dart';
-import 'surah_class.dart';
-import 'organizedAyah.dart';
 
+import '../quran_byPage/quran_pages.dart';
+import 'organizedAyah.dart';
+import 'quran_data.dart';
+import 'reader_prefs.dart';
+import 'reader_theme.dart';
+import 'surah_class.dart';
+
+/// The index of the Quran: search, resume where you left off, and open any
+/// surah in either reader.
 class SurahListPage extends StatefulWidget {
   const SurahListPage({super.key});
 
   @override
-  _SurahListPageState createState() => _SurahListPageState();
+  State<SurahListPage> createState() => _SurahListPageState();
 }
 
 class _SurahListPageState extends State<SurahListPage> {
-  List<Surah> surahs = [];
-  bool isLoading = true;
+  final _prefs = ReaderPrefs.instance;
+  final _searchController = TextEditingController();
+
+  List<Surah> _all = const [];
+  List<Surah> _shown = const [];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    updatingSurahList();
+    _load();
   }
 
-  Future<void> updatingSurahList() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedSurahs = prefs.getString('surahs');
-
-    if (cachedSurahs != null) {
-      final List<dynamic> surahsData = json.decode(cachedSurahs);
-      setState(() {
-        surahs = surahsData.map((surah) => Surah.fromJson(surah)).toList();
-        isLoading = false;
-      });
-    } else {
-      await getAllSurah();
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  Future<void> getAllSurah() async {
+  Future<void> _load({bool refresh = false}) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final response = await http
-          .get(Uri.parse('https://api.alquran.cloud/v1/quran/quran-uthmani'))
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> surahsData = data['data']['surahs'];
-        final fetchedSurahs = surahsData.map((surah) => Surah.fromJson(surah)).toList();
-
-        setState(() {
-          surahs = fetchedSurahs;
-          isLoading = false;
-        });
-
-        final prefs = await SharedPreferences.getInstance();
-        prefs.setString('surahs', json.encode(surahsData));
-      } else {
-        throw Exception('Failed to load Quran data');
-      }
-    } catch (e) {
+      await _prefs.load();
+      final surahs = await QuranData.instance.load(forceRefresh: refresh);
+      if (!mounted) return;
       setState(() {
-        isLoading = false;
+        _all = surahs;
+        _shown = surahs;
+        _loading = false;
       });
-      debugPrint('Error fetching Quran data: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not load the Surah list. Check your connection and try again.'),
-        ));
-      }
+      _filter(_searchController.text);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Could not load the Quran. Check your connection and try again.';
+      });
     }
+  }
+
+  void _filter(String query) {
+    final q = query.trim().toLowerCase();
+    setState(() {
+      _shown = q.isEmpty
+          ? _all
+          : _all.where((s) {
+              return s.englishName.toLowerCase().contains(q) ||
+                  s.englishNameTranslation.toLowerCase().contains(q) ||
+                  s.name.contains(query.trim()) ||
+                  s.number.toString() == q;
+            }).toList();
+    });
+  }
+
+  void _openEasyRead(int page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrganizedAyahViewScreen(surahs: _all, initialPage: page),
+      ),
+    ).then((_) {
+      // Refresh "Continue reading" with the page the reader left on.
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _openMushaf(int page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => QuranByPages(initialPage: page)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
-    final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
+    final t = ReaderTheme.of(context);
 
     return Scaffold(
+      backgroundColor: t.paper,
       appBar: AppBar(
-        title: const Text('القرآن الكريم'),
+        backgroundColor: ReaderTheme.green,
+        foregroundColor: Colors.white,
+        title: const Text('القرآن الكريم',
+            style: TextStyle(fontFamily: 'Kitab-Bold')),
         centerTitle: true,
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          bool isTabletOrDesktop = constraints.maxWidth >= 600;
-          double fontSize = isTabletOrDesktop ? 20 : 16;
-          double padding = isTabletOrDesktop ? 20 : 10;
-
-          return isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : CupertinoScrollbar(
-            child: ListView.builder(
-              itemCount: surahs.length,
-              itemBuilder: (context, index) {
-                final surah = surahs[index];
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                      vertical: padding / 2, horizontal: padding),
-                  child: Card(
-                    color: isDarkTheme ? Colors.grey[850] : Colors.white,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        'Page ${surah.ayahs.first.page}: ${surah.englishNameTranslation}',
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          color: isDarkTheme ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '${surah.ayahs.length} Verses - ${surah.revelationType}',
-                        style: TextStyle(
-                          fontSize: fontSize * 0.9,
-                          color: isDarkTheme
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                        ),
-                      ),
-                      trailing: Text(
-                        '${surah.name}\n${surah.englishName}',
-                        style: TextStyle(
-                          fontFamily: 'Kitab-Bold',
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkTheme ? Colors.cyan : Colors.teal,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      leading: CircleAvatar(
-                        backgroundColor:
-                        isDarkTheme ? Colors.black26 : Colors.black54,
-                        child: Text(
-                          surah.number.toString(),
-                          style: TextStyle(
-                            fontSize: fontSize * 0.9,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OrganizedAyahViewScreen(
-                              surahs: surahs,
-                              initialPage: surah.ayahs.first.page - 1,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: ReaderTheme.green))
+          : _error != null
+              ? _errorState(t)
+              : RefreshIndicator(
+                  onRefresh: () => _load(refresh: true),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    itemCount: _shown.length + 2,
+                    itemBuilder: (context, i) {
+                      if (i == 0) return _searchField(t);
+                      if (i == 1) return _continueCard(t);
+                      return _surahTile(_shown[i - 2], t);
+                    },
                   ),
-                );
-              },
+                ),
+    );
+  }
+
+  Widget _errorState(ReaderTheme t) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off, size: 40, color: t.inkSoft),
+              const SizedBox(height: 12),
+              Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: t.ink)),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: ReaderTheme.green),
+                onPressed: () => _load(refresh: true),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try again'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _searchField(ReaderTheme t) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _filter,
+          style: TextStyle(color: t.ink),
+          decoration: InputDecoration(
+            hintText: 'Search by name or number',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchController.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      _filter('');
+                    },
+                  ),
+            filled: true,
+            fillColor: t.card,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: t.divider),
             ),
-          );
-        },
+          ),
+        ),
+      );
+
+  /// Shown once the reader has been somewhere, so reopening the app puts
+  /// them back on the page they left.
+  Widget _continueCard(ReaderTheme t) {
+    if (_prefs.lastPage <= 1) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      child: Material(
+        color: ReaderTheme.green,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _openEasyRead(_prefs.lastPage),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.menu_book, color: ReaderTheme.goldSoft),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Continue reading',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600)),
+                      Text('Page ${_prefs.lastPage}',
+                          style: const TextStyle(color: ReaderTheme.goldSoft)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
+
+  Widget _surahTile(Surah s, ReaderTheme t) {
+    final page = s.ayahs.isEmpty ? 1 : s.ayahs.first.page;
+    return Card(
+      color: t.card,
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: t.divider),
+      ),
+      child: ListTile(
+        onTap: () => _openEasyRead(page),
+        leading: _numberRosette(s.number, t),
+        title: Text(s.englishName,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: t.ink)),
+        subtitle: Text(
+          '${s.englishNameTranslation} · ${s.isMakki ? "Makki" : "Madani"} · ${s.ayahs.length} ayahs · page $page',
+          style: TextStyle(fontSize: 12, color: t.inkSoft),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(s.name,
+                style: TextStyle(
+                    fontFamily: 'Kitab-Bold', fontSize: 19, color: t.ink)),
+            IconButton(
+              tooltip: 'Open in Mushaf',
+              icon: const Icon(Icons.auto_stories_outlined,
+                  size: 20, color: ReaderTheme.gold),
+              onPressed: () => _openMushaf(page),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// An eight-point rosette holding the surah number, echoing the Mushaf.
+  Widget _numberRosette(int number, ReaderTheme t) => Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: t.dark
+              ? ReaderTheme.green.withValues(alpha: 0.35)
+              : ReaderTheme.goldSoft.withValues(alpha: 0.35),
+          border: Border.all(color: ReaderTheme.gold, width: 1.2),
+        ),
+        child: Text(
+          toArabicDigits(number),
+          style: TextStyle(
+            fontFamily: 'Kitab-Bold',
+            fontSize: 15,
+            color: t.dark ? ReaderTheme.goldSoft : ReaderTheme.green,
+          ),
+        ),
+      );
 }
