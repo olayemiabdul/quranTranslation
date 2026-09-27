@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:universal_quran/constant.dart';
 
 /// How a single prayer should alert the user.
 enum AzanMode { adhan, vibrate, silent, off }
@@ -33,17 +34,10 @@ class AzanService {
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
-
-  static const List<String> prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+ static const List<String> prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
   static const List<String> displayed = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-  static const int _daysAhead = 7; // 35 alarms; stays under iOS's 64 limit
-  static const int _idBase = 7000;
-
-  // NEW channel ids. Android freezes a channel's sound the first time it is
-  // created, and the old 'azan_channel_id' was often created silent.
-  static const _chAdhan = 'uq_adhan_v2';
-  static const _chVibrate = 'uq_vibrate_v2';
-  static const _chSilent = 'uq_silent_v2';
+ static const int daysAhead = 7; // 35 alarms; stays under iOS's 64 limit
+  static const int idBase = 7000;
 
   // ---------------------------------------------------------------- setup
   Future<void> init() async {
@@ -51,8 +45,8 @@ class AzanService {
 
     tzdata.initializeTimeZones();
     try {
-      final name = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(name));
+      final info = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(info.identifier));
     } catch (_) {
       // Unknown zone name on some devices. We schedule by absolute UTC
       // instant below, so this fallback never shifts the alarm time.
@@ -74,7 +68,7 @@ class AzanService {
         AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
       await android.createNotificationChannel(const AndroidNotificationChannel(
-        _chAdhan,
+        chAdhan,
         'Adhan',
         description: 'Plays the adhan at prayer time',
         importance: Importance.max,
@@ -84,14 +78,14 @@ class AzanService {
         enableVibration: true,
       ));
       await android.createNotificationChannel(const AndroidNotificationChannel(
-        _chVibrate,
+        chVibrate,
         'Prayer reminder (vibrate)',
         importance: Importance.high,
         playSound: false,
         enableVibration: true,
       ));
       await android.createNotificationChannel(const AndroidNotificationChannel(
-        _chSilent,
+        chSilent,
         'Prayer reminder (silent)',
         importance: Importance.high,
         playSound: false,
@@ -131,7 +125,7 @@ class AzanService {
       exact = await a.canScheduleExactNotifications() ?? false;
     }
     final pending = await _plugin.pendingNotificationRequests();
-    final ours = pending.where((p) => p.id >= _idBase && p.id < _idBase + 1000).length;
+    final ours = pending.where((p) => p.id >= idBase && p.id < idBase + 1000).length;
     return AzanHealth(notif, exact, ours);
   }
 
@@ -178,7 +172,7 @@ class AzanService {
   Future<List<PrayerDay>> fetchWeek(double lat, double lng) async {
     final m = await method();
     final today = DateTime.now();
-    final days = List.generate(_daysAhead,
+    final days = List.generate(daysAhead,
         (i) => DateTime(today.year, today.month, today.day).add(Duration(days: i)));
 
     final results = await Future.wait(days.map((d) async {
@@ -270,7 +264,7 @@ class AzanService {
         if (mode == AzanMode.off) continue;
 
         await _plugin.zonedSchedule(
-          _idBase + day * 10 + i,
+          idBase + day * 10 + i,
           '$name ${_arabic[name]}',
           'It is time for $name prayer',
           // Absolute instant: correct even if the tz name lookup failed.
@@ -289,7 +283,7 @@ class AzanService {
   Future<void> testIn({int seconds = 60}) async {
     await init();
     await _plugin.zonedSchedule(
-      _idBase + 999,
+      idBase + 999,
       'Test adhan',
       'If you hear this, prayer alerts are working',
       tz.TZDateTime.now(tz.UTC).add(Duration(seconds: seconds)),
@@ -302,9 +296,9 @@ class AzanService {
 
   NotificationDetails _details(AzanMode mode) {
     final channel = switch (mode) {
-      AzanMode.adhan => (_chAdhan, 'Adhan'),
-      AzanMode.vibrate => (_chVibrate, 'Prayer reminder (vibrate)'),
-      _ => (_chSilent, 'Prayer reminder (silent)'),
+      AzanMode.adhan => (chAdhan, 'Adhan'),
+      AzanMode.vibrate => (chVibrate, 'Prayer reminder (vibrate)'),
+      _ => (chSilent, 'Prayer reminder (silent)'),
     };
     return NotificationDetails(
       android: AndroidNotificationDetails(

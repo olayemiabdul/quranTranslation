@@ -149,9 +149,9 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
               PopupMenuItem(
                 child: ElevatedButton(
                   onPressed: () {
-                    Share.share(
-                        'Check out this amazing Quran app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui',
-                        subject: 'Share the App');
+                    SharePlus.instance.share(ShareParams(
+                        text: 'Check out this amazing Quran app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui',
+                        subject: 'Share the App'));
                   },
                   child: const Icon(Icons.share, size: 30),
                 ),

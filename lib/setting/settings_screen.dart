@@ -49,8 +49,9 @@ class SettingsPageScreen extends StatelessWidget {
   }
 
   shareApp(BuildContext context) {
-    Share.share('https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
-        subject: 'Share Our App');
+    SharePlus.instance.share(ShareParams(
+        text: 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
+        subject: 'Share Our App'));
   }
 
 

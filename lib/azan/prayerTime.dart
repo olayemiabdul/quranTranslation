@@ -85,7 +85,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
       if (pos != null) {
         String label = '';
         try {
-          final marks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+          final marks = await Geocoding().placemarkFromCoordinates(pos.latitude, pos.longitude);
           final m = marks.first;
           label = [m.locality, m.subAdministrativeArea, m.country]
               .where((e) => e != null && e.isNotEmpty)
@@ -124,15 +124,17 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
     }
     try {
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: const Duration(seconds: 12),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 12),
+        ),
       );
     } catch (_) {
       return Geolocator.getLastKnownPosition();
     }
   }
 
-  // ---------------------------------------------------------------- ui
+ ///ui
   @override
   Widget build(BuildContext context) {
     final today = _week.isNotEmpty ? _week.first : null;

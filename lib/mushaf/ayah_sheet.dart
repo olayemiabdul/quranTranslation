@@ -168,7 +168,7 @@ class _AyahSheetState extends State<AyahSheet> {
               IconButton.outlined(
                 tooltip: 'Share',
                 icon: const Icon(Icons.share),
-                onPressed: () => Share.share(_shareText),
+                onPressed: () => SharePlus.instance.share(ShareParams(text: _shareText)),
               ),
             ]),
           ],
