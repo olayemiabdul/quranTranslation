@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../dropdown_class/translator_list.dart';
+import '../enum/translator_list_enum.dart';
 import '../provider/theme_provider.dart';
 import 'Urdu_Model_Class.dart';
 import 'Urdu_Organized_ayah.dart';

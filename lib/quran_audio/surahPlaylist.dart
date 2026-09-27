@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 
 
-import '../dropdown_class/reciter_list.dart';
+import '../enum/reciter_list_enum.dart';
 import '../model/Audio_model.dart';
 import '../provider/theme_provider.dart';
 import 'audio_player.dart';

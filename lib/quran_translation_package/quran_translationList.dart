@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_quran/quran_translation_package/translations_model_class.dart';
 
-import '../dropdown_class/translator_list.dart';
+import '../enum/translator_list_enum.dart';
 import '../provider/theme_provider.dart';
 
 import 'organized_translationAyah.dart';

@@ -7,8 +7,8 @@ import 'package:qcf_quran_plus/qcf_quran_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../dropdown_class/reciter_list.dart';
-import '../dropdown_class/translator_list.dart';
+import '../enum/reciter_list_enum.dart';
+import '../enum/translator_list_enum.dart';
 import 'mushaf_frame.dart';
 
 enum AyahAction { playFromHere }
