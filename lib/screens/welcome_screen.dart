@@ -31,19 +31,8 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
   //Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 
 
-  // void getCurrentLocation() async {
-  // Position currentPosition = await currentLocations.determinePosition();
-  // setState(() {
-  // currentLocations.position =currentPosition;
-  // });
-  // }
-  // @override
-  // void initState() {
-  //   // TODO: implement initState
-  //   super.initState();
-  //   //getCurrentLocation(); when implemting geolocation
-  //   currentLocations.getCurrentLocation();
-  // }
+
+
   @override
   Widget build(BuildContext context) {
 
