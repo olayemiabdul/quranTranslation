@@ -4,7 +4,41 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../enum/translator_list_enum.dart';
 import 'translations_model_class.dart';
+
+/// An edition the Translation reader offers in its picker.
+class TranslationEdition {
+  final String label;
+  final String code;
+  const TranslationEdition(this.label, this.code);
+
+  /// Offered here but not in the shared [TranslatorName] enum, which also
+  /// feeds the Mushaf and Easy Read verse sheets. Urdu is what lets this one
+  /// reader cover what the separate Urdu reader does.
+  static const _extra = [
+    TranslationEdition('Ahmed Ali (Urdu)', 'ur.ahmedali'),
+    TranslationEdition('Fateh Muhammad Jalandhry (Urdu)', 'ur.jalandhry'),
+  ];
+
+  /// Every edition, each code once (the enum lists `ru.porokhova` twice).
+  static final List<TranslationEdition> all = () {
+    final seen = <String>{};
+    return [
+      for (final t in TranslatorName.values)
+        if (seen.add(t.text)) TranslationEdition(t.label.trim(), t.text),
+      for (final e in _extra)
+        if (seen.add(e.code)) e,
+    ];
+  }();
+
+  static String labelFor(String code) {
+    for (final e in all) {
+      if (e.code == code) return e.label;
+    }
+    return code;
+  }
+}
 
 /// Downloads, caches and parses a whole translation edition.
 ///
@@ -134,6 +168,10 @@ class TranslationData {
     }
   }
 
+  /// Parses a decoded `/v1/quran/{edition}` response. Exposed for tests.
+  @visibleForTesting
+  List<TranslationSurahClass> parse(dynamic decoded) => _parse(decoded);
+
   List<TranslationSurahClass> _parse(dynamic decoded) {
     final surahs = (decoded['data']['surahs'] as List)
         .map((e) => TranslationSurahClass.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -142,14 +180,15 @@ class TranslationData {
     return _liftBasmala(surahs);
   }
 
-  /// Most editions glue the Basmala onto the FRONT of ayah 1 of every surah
-  /// except Al-Fatiha (where it is ayah 1) and At-Tawbah (which has none).
+  /// Gives every surah except Al-Fatiha (where the Basmala is ayah 1) and
+  /// At-Tawbah (which has none) the edition's own Basmala as a heading.
   ///
-  /// We can't regex that, because it is written differently in every
-  /// language. Instead we take the edition's own Al-Fatiha 1:1 as the
-  /// reference and strip exactly that prefix, so the page can show it as a
-  /// heading. If the prefix does not match cleanly we change nothing, which
-  /// is the safe outcome: the text stays exactly as the edition wrote it.
+  /// Some texts also glue the Basmala onto the FRONT of ayah 1. We can't
+  /// regex that, because it is written differently in every language, so we
+  /// take the edition's own Al-Fatiha 1:1 as the reference and strip exactly
+  /// that prefix. If the prefix does not match cleanly we strip nothing,
+  /// which is the safe outcome: the text stays exactly as the edition wrote
+  /// it.
   List<TranslationSurahClass> _liftBasmala(List<TranslationSurahClass> surahs) {
     if (surahs.isEmpty || surahs.first.ayahsEA.isEmpty) return surahs;
 
@@ -161,9 +200,14 @@ class TranslationData {
       if (surah.number == 1 || surah.number == 9) return surah;
       if (surah.ayahsEA.isEmpty) return surah;
 
+      // Every surah but these two opens with the Basmala, whether or not the
+      // edition wrote it into ayah 1. Checked against the live API: none of
+      // en.sahih, en.ahmedali, en.yusufali, ur.ahmedali, ur.jalandhry,
+      // fr.hamidullah, fa.ayati or id.indonesian glue it on, so without this
+      // the heading would never appear.
       final first = surah.ayahsEA.first;
       final remainder = _stripPrefix(first.text, normalizedRef);
-      if (remainder == null) return surah;
+      if (remainder == null) return surah.copyWith(bismillah: reference);
 
       final ayahs = List<AyahTranslation>.from(surah.ayahsEA);
       ayahs[0] = first.copyWith(text: remainder);

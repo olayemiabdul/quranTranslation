@@ -210,8 +210,10 @@ class _AllTranslationTextPageState extends State<AllTranslationTextPage> {
         child: Text(
           text,
           textAlign: TextAlign.center,
+          textDirection: widget.rtl ? TextDirection.rtl : TextDirection.ltr,
           style: _body(t).copyWith(
-            fontStyle: FontStyle.italic,
+            // Arabic-script faces have no italic; Flutter would fake a slant.
+            fontStyle: widget.rtl ? FontStyle.normal : FontStyle.italic,
             fontSize: (_prefs.fontSize * 0.95).clamp(12, 30),
             color: t.inkSoft,
           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../enum/translator_list_enum.dart';
 import '../quran_ayah/reader_theme.dart';
 import 'organized_translationAyah.dart';
 import 'translation_data.dart';
@@ -103,12 +102,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
     });
   }
 
-  String _labelFor(String edition) {
-    for (final t in TranslatorName.values) {
-      if (t.text == edition) return t.label.trim();
-    }
-    return edition;
-  }
+  String _labelFor(String edition) => TranslationEdition.labelFor(edition);
 
   String get _editionLabel => _labelFor(_prefs.edition);
 
@@ -389,9 +383,9 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
   Future<void> _pickTranslation() async {
     final t = ReaderTheme.read(context);
     final controller = TextEditingController();
-    var shown = TranslatorName.values.toList();
+    var shown = TranslationEdition.all;
 
-    final picked = await showModalBottomSheet<TranslatorName>(
+    final picked = await showModalBottomSheet<TranslationEdition>(
       context: context,
       isScrollControlled: true,
       backgroundColor: t.paper,
@@ -416,11 +410,11 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                     final query = q.trim().toLowerCase();
                     setSheet(() {
                       shown = query.isEmpty
-                          ? TranslatorName.values.toList()
-                          : TranslatorName.values
+                          ? TranslationEdition.all
+                          : TranslationEdition.all
                               .where((e) =>
                                   e.label.toLowerCase().contains(query) ||
-                                  e.text.toLowerCase().contains(query))
+                                  e.code.toLowerCase().contains(query))
                               .toList();
                     });
                   },
@@ -432,10 +426,10 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                   itemCount: shown.length,
                   itemBuilder: (_, i) {
                     final e = shown[i];
-                    final isCurrent = e.text == _prefs.edition;
-                    final offline = _downloaded.contains(e.text);
+                    final isCurrent = e.code == _prefs.edition;
+                    final offline = _downloaded.contains(e.code);
                     return ListTile(
-                      title: Text(e.label.trim()),
+                      title: Text(e.label),
                       subtitle: offline
                           ? Text('Saved on this phone',
                               style: TextStyle(fontSize: 11, color: t.inkSoft))
@@ -459,7 +453,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
       ),
     );
 
-    if (picked == null || picked.text == _prefs.edition) return;
-    await _loadEdition(picked.text);
+    if (picked == null || picked.code == _prefs.edition) return;
+    await _loadEdition(picked.code);
   }
 }
