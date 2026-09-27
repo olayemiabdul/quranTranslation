@@ -240,7 +240,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: ReaderTheme.green))
                 else
-                  Text('Change',
+                  const Text('Change',
                       style: TextStyle(
                           color: ReaderTheme.green,
                           fontWeight: FontWeight.w600)),
