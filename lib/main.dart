@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import 'azan/azan_service.dart';
 import 'quran_byPage/quran_pages.dart' show bootQcfFonts;
+import 'constant.dart';
 
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark);
 
@@ -64,7 +65,9 @@ class CompleteQuranApp extends StatelessWidget {
           theme: ThemeData.light(
 
           ),
-          darkTheme: ThemeData.light(),
+          // A real dark theme, so default text, sheets and dialogs follow
+          // ThemeNotifier instead of staying light in night mode.
+          darkTheme: _darkTheme,
           themeMode: themeMode, // Set the theme based on the ValueNotifier
           home:const ShowUpAnimation(child:CoverPageDetail(),), // Main screen widget
         );
@@ -74,6 +77,24 @@ class CompleteQuranApp extends StatelessWidget {
 }
 
 
+
+final ThemeData _darkTheme = () {
+  final base = ThemeData.dark();
+  return base.copyWith(
+    // A step lighter than backGroundColor, which the home cards use.
+    scaffoldBackgroundColor: const Color(0xFF1E1B27),
+    canvasColor: const Color(0xFF1E1B27),
+    colorScheme: base.colorScheme.copyWith(
+      primary: selectionColor,
+      secondary: Colors.amber,
+      surface: const Color(0xFF262233),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: homeContainerColor,
+      foregroundColor: Colors.white,
+    ),
+  );
+}();
 
 class ShowUpAnimation extends StatefulWidget {
   final Widget child;

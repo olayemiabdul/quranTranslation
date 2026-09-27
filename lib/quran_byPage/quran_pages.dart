@@ -166,7 +166,9 @@ class _QuranByPagesState extends State<QuranByPages> {
       backgroundColor: MushafColors.paper,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => AyahSheet(surah: surah, ayah: ayah),
+      // Sheets sit on light paper whatever the app theme.
+      builder: (_) => Theme(
+          data: ThemeData.light(), child: AyahSheet(surah: surah, ayah: ayah)),
     );
     if (!mounted) return;
     _reciter = (await SharedPreferences.getInstance()).getString(_kReciter) ?? _reciter;
@@ -438,7 +440,9 @@ class _QuranByPagesState extends State<QuranByPages> {
         builder: (ctx, setSheet) {
           Future<void> save(String k, bool v) async =>
               (await SharedPreferences.getInstance()).setBool(k, v);
-          return SafeArea(
+          return Theme(
+            data: ThemeData.light(),
+            child: SafeArea(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               SwitchListTile(
                 title: const Text('Night reading'),
@@ -470,7 +474,7 @@ class _QuranByPagesState extends State<QuranByPages> {
                 },
               ),
             ]),
-          );
+          ));
         },
       ),
     );
@@ -514,7 +518,9 @@ class _QuranByPagesState extends State<QuranByPages> {
       builder: (_) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.75,
-        builder: (_, scroll) => Column(children: [
+        builder: (_, scroll) => Theme(
+          data: ThemeData.light(),
+          child: Column(children: [
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(title,
@@ -527,7 +533,7 @@ class _QuranByPagesState extends State<QuranByPages> {
               itemBuilder: (_, i) => builder(i),
             ),
           ),
-        ]),
+        ])),
       ),
     );
   }

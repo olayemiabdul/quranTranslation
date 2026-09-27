@@ -43,7 +43,7 @@ class UrduTranslationTextPage extends StatelessWidget {
           maxWidth: isDesktop ? 900 : double.infinity,
         ),
         child: Container(
-          color: Colors.white,
+          color: isDarkTheme ? const Color(0xFF121212) : Colors.white,
           height: MediaQuery.of(context).size.height,
           child: ListView(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -171,9 +171,9 @@ class UrduTranslationTextPage extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '${page.pageNumber}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
-                      color: Colors.black54,
+                      color: isDarkTheme ? Colors.white54 : Colors.black54,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

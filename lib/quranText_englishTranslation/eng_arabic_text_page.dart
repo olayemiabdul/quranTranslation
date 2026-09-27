@@ -42,7 +42,7 @@ class EngArabicTextPageNew extends StatelessWidget {
           maxWidth: isDesktop ? 900 : double.infinity,
         ),
         child: Container(
-          color: Colors.white,
+          color: isDarkTheme ? const Color(0xFF121212) : Colors.white,
             height: MediaQuery.of(context).size.height,
           child: ListView(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -176,7 +176,7 @@ class EngArabicTextPageNew extends StatelessWidget {
                     '${page.pageNumber}',
                     style: TextStyle(
                       fontSize: Responsive.isMobile(context) ? 16 : 18,
-                      color: Colors.black54,
+                      color: isDarkTheme ? Colors.white54 : Colors.black54,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

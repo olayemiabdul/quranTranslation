@@ -82,7 +82,7 @@ class _QuranUrduTranslationListPageState extends State<QuranUrduTranslationListP
     return Scaffold(
       appBar: AppBar(
         title: const Text('URDU Quran Translation'),
-        backgroundColor: isDarkTheme ? Colors.white : Colors.teal,
+        backgroundColor: isDarkTheme ? Colors.black87 : Colors.teal,
       ),
       body: quranTranslateData.isEmpty
           ? const Center(child: CircularProgressIndicator())

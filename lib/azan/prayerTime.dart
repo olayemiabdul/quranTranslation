@@ -135,8 +135,13 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
   }
 
  ///ui
+  // A fixed light design: pin the light theme so a dark app theme cannot
+  // turn its default-coloured text white on these light surfaces.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Theme(data: ThemeData.light(), child: Builder(builder: _buildLight));
+
+  Widget _buildLight(BuildContext context) {
     final today = _week.isNotEmpty ? _week.first : null;
     final next = _nextPrayer();
 

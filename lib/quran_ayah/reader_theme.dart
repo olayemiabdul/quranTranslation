@@ -6,10 +6,8 @@ import '../provider/theme_provider.dart';
 /// Shared palette for both readers, so the Mushaf and Easy Read feel like
 /// one app. Green and gold from the printed Madinah Mushaf.
 ///
-/// NOTE: this app decides dark mode from [ThemeNotifier], not from
-/// `Theme.of(context).brightness` — `main.dart` currently sets `darkTheme`
-/// to `ThemeData.light()`, so the framework brightness is always light.
-/// Read the notifier, exactly as the other screens do.
+/// Dark mode comes from [ThemeNotifier], which also drives `themeMode` in
+/// `main.dart`, so this palette and the framework theme always agree.
 class ReaderTheme {
   final bool dark;
   const ReaderTheme(this.dark);

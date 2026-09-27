@@ -103,8 +103,13 @@ class _SurahAudioPageState extends State<SurahAudioPage> {
     ].join(':');
   }
 
+  // A fixed light design: pin the light theme so a dark app theme cannot
+  // turn its default-coloured text white on these light surfaces.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Theme(data: ThemeData.light(), child: Builder(builder: _buildLight));
+
+  Widget _buildLight(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.surah.name),
