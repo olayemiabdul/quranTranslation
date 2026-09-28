@@ -244,9 +244,9 @@ class _AyahPageViewState extends State<AyahPageView> {
             ],
             if (ayah.sajda) ...[
               const SizedBox(height: 8),
-              Row(children: [
-                const Icon(Icons.star_border, size: 16, color: ReaderTheme.gold),
-                const SizedBox(width: 6),
+              const Row(children: [
+                Icon(Icons.star_border, size: 16, color: ReaderTheme.gold),
+                SizedBox(width: 6),
                 Text('Sajda',
                     style: TextStyle(fontSize: 12, color: ReaderTheme.gold)),
               ]),

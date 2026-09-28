@@ -95,7 +95,7 @@ class _AyahActionsSheetState extends State<AyahActionsSheet> {
                 Expanded(
                   child: Text(
                     _reference,
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                         color: ReaderTheme.green),
