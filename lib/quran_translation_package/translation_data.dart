@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../enum/translator_list_enum.dart';
+import 'translation_typography.dart';
 import 'translations_model_class.dart';
 
 /// An edition the Translation reader offers in its picker.
@@ -13,22 +14,12 @@ class TranslationEdition {
   final String code;
   const TranslationEdition(this.label, this.code);
 
-  /// Offered here but not in the shared [TranslatorName] enum, which also
-  /// feeds the Mushaf and Easy Read verse sheets. Urdu is what lets this one
-  /// reader cover what the separate Urdu reader does.
-  static const _extra = [
-    TranslationEdition('Ahmed Ali (Urdu)', 'ur.ahmedali'),
-    TranslationEdition('Fateh Muhammad Jalandhry (Urdu)', 'ur.jalandhry'),
-  ];
-
   /// Every edition, each code once (the enum lists `ru.porokhova` twice).
   static final List<TranslationEdition> all = () {
     final seen = <String>{};
     return [
       for (final t in TranslatorName.values)
         if (seen.add(t.text)) TranslationEdition(t.label.trim(), t.text),
-      for (final e in _extra)
-        if (seen.add(e.code)) e,
     ];
   }();
 
@@ -56,18 +47,11 @@ class TranslationData {
   static const String defaultEdition = 'en.sahih';
   static const int totalPages = 604;
 
-  /// Editions whose script runs right to left. The old app shipped a whole
-  /// duplicate reader for Urdu because this reader assumed left to right;
-  /// handling it here means one reader serves every language.
-  static const Set<String> _rtlLanguages = {
-    'ar', 'ur', 'fa', 'ps', 'sd', 'he', 'ug', 'dv', 'ku', 'yi',
-  };
-
   /// True for an edition identifier such as `ur.jalandhry` or `fa.makarem`.
-  static bool isRtl(String edition) {
-    final code = edition.split('.').first.toLowerCase();
-    return _rtlLanguages.contains(code);
-  }
+  ///
+  /// The list lives with the typography, since script direction and the
+  /// face that can draw it are the same question.
+  static bool isRtl(String edition) => TranslationTypography.isRtl(edition);
 
   static String _cacheKey(String edition) => 'translation_$edition';
   static const _downloadedKey = 'translation_downloaded_editions';

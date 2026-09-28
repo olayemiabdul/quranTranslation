@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../enum/reciter_list_enum.dart';
 import '../enum/translator_list_enum.dart';
+import '../quran_translation_package/translation_typography.dart';
 import 'mushaf_frame.dart';
 
 enum AyahAction { playFromHere }
@@ -98,7 +99,16 @@ class _AyahSheetState extends State<AyahSheet> {
                   const Divider(height: 24, color: MushafColors.goldSoft),
                   if (_translation != null)
                     Text(_translation!,
-                        style: const TextStyle(fontSize: 16, height: 1.55))
+                        textDirection: TranslationTypography.isRtl(_edition)
+                            ? TextDirection.rtl
+                            : TextDirection.ltr,
+                        style: TranslationTypography.body(
+                          _edition,
+                          fontSize: 16,
+                          lineHeight: 1.55,
+                          color: DefaultTextStyle.of(context).style.color ?? Colors.black87,
+                          serif: false,
+                        ))
                   else if (_failed)
                     TextButton.icon(
                       onPressed: _load,

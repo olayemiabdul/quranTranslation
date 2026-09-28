@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../quran_translation_package/translation_typography.dart';
 
 import 'quran_content.dart';
 import 'reader_prefs.dart';
@@ -225,10 +226,15 @@ class _AyahPageViewState extends State<AyahPageView> {
               const SizedBox(height: 10),
               Text(
                 translation,
-                style: TextStyle(
-                  fontSize: (_prefs.fontSize * 0.62).clamp(13, 20),
-                  height: 1.5,
+                textDirection: TranslationTypography.isRtl(_loadedEdition ?? '')
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
+                style: TranslationTypography.body(
+                  _loadedEdition ?? '',
+                  fontSize: (_prefs.fontSize * 0.62).clamp(13, 20).toDouble(),
+                  lineHeight: 1.5,
                   color: t.inkSoft,
+                  serif: false,
                 ),
               ),
             ] else if (snap.connectionState == ConnectionState.waiting) ...[

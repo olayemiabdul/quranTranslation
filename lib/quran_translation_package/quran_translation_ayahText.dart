@@ -1,10 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../quran_ayah/reader_theme.dart';
 import 'quran_translation_content.dart';
 import 'translation_prefs.dart';
+import 'translation_typography.dart';
 import 'translations_model_class.dart';
 
 /// Renders one page of the Translation reader.
@@ -59,14 +59,16 @@ class _AllTranslationTextPageState extends State<AllTranslationTextPage> {
           ..onTap = () => widget.onAyahTap?.call(ayah, content),
       );
 
-  TextStyle _body(ReaderTheme t) {
-    final base = TextStyle(
-      fontSize: _prefs.fontSize,
-      height: _prefs.lineHeight,
-      color: t.ink,
-    );
-    return _prefs.serif ? GoogleFonts.notoSerif(textStyle: base) : GoogleFonts.inter(textStyle: base);
-  }
+  /// Script-aware: Urdu gets nastaliq, Arabic-script languages get naskh,
+  /// Latin gets the reader's serif or sans choice. A Latin face has no Urdu
+  /// glyphs at all, so this is correctness, not polish.
+  TextStyle _body(ReaderTheme t) => TranslationTypography.body(
+        _prefs.edition,
+        fontSize: _prefs.fontSize,
+        lineHeight: _prefs.lineHeight,
+        color: t.ink,
+        serif: _prefs.serif,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +117,8 @@ class _AllTranslationTextPageState extends State<AllTranslationTextPage> {
     final body = _body(t);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      // Nastaliq descenders need more vertical room than Latin.
+      padding: TranslationTypography.versePadding(_prefs.edition),
       child: RichText(
         textDirection: widget.rtl ? TextDirection.rtl : TextDirection.ltr,
         textAlign: widget.rtl ? TextAlign.right : TextAlign.left,
@@ -214,7 +217,8 @@ class _AllTranslationTextPageState extends State<AllTranslationTextPage> {
           style: _body(t).copyWith(
             // Arabic-script faces have no italic; Flutter would fake a slant.
             fontStyle: widget.rtl ? FontStyle.normal : FontStyle.italic,
-            fontSize: (_prefs.fontSize * 0.95).clamp(12, 30),
+            fontSize: (_prefs.fontSize * 0.95).clamp(12, 30) *
+                TranslationTypography.sizeFactor(_prefs.edition),
             color: t.inkSoft,
           ),
         ),

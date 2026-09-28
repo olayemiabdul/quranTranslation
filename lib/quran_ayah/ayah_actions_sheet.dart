@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:universal_quran/enum/reciter_list_enum.dart';
 import 'package:universal_quran/enum/translator_list_enum.dart';
+import 'package:universal_quran/quran_translation_package/translation_typography.dart';
 import 'reader_prefs.dart';
 import 'reader_theme.dart';
 import 'surah_class.dart';
@@ -126,7 +127,17 @@ class _AyahActionsSheetState extends State<AyahActionsSheet> {
                     Divider(height: 26, color: t.divider),
                     if (_translation != null)
                       Text(_translation!,
-                          style: TextStyle(fontSize: 16, height: 1.55, color: t.ink))
+                          textDirection:
+                              TranslationTypography.isRtl(_prefs.translationEdition)
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                          style: TranslationTypography.body(
+                            _prefs.translationEdition,
+                            fontSize: 16,
+                            lineHeight: 1.55,
+                            color: t.ink,
+                            serif: false,
+                          ))
                     else if (_failed)
                       TextButton.icon(
                         onPressed: _load,

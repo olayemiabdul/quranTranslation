@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'translation_data.dart';
+import 'translation_typography.dart';
 
 /// Reading settings for the Translation reader, kept separate from the
 /// Arabic readers: translated prose wants a different size and measure from
@@ -42,11 +43,29 @@ class TranslationPrefs extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setEdition(String v) async {
+  /// Makes [v] the edition on screen. It is always remembered as the last
+  /// edition for its language, so a language-specific entry point (the Urdu
+  /// tile, say) reopens on it. Only a [general] choice, made from the plain
+  /// Translation tile, also becomes what that tile opens on.
+  Future<void> setEdition(String v, {bool general = true}) async {
     edition = v;
     notifyListeners();
-    (await SharedPreferences.getInstance()).setString(_kEdition, v);
+    final p = await SharedPreferences.getInstance();
+    if (general) await p.setString(_kEdition, v);
+    await p.setString(_langKey(TranslationTypography.languageOf(v)), v);
   }
+
+  /// The edition the plain Translation tile opens on.
+  Future<String> generalEdition() async =>
+      (await SharedPreferences.getInstance()).getString(_kEdition) ??
+      TranslationData.defaultEdition;
+
+  /// The edition this reader last used in [language], if any.
+  Future<String?> lastEditionFor(String language) async =>
+      (await SharedPreferences.getInstance())
+          .getString(_langKey(language.toLowerCase()));
+
+  static String _langKey(String language) => 'tr_lang_$language';
 
   Future<void> setFontSize(double v) async {
     fontSize = v.clamp(13, 34);

@@ -5,12 +5,33 @@ import 'organized_translationAyah.dart';
 import 'translation_data.dart';
 import 'translation_prefs.dart';
 import 'translation_search.dart';
+import 'translation_typography.dart';
 import 'translations_model_class.dart';
 
 /// The front door of the Translation reader: pick a language, resume where
 /// you were, search, or open any surah.
+///
+/// One reader serves every language. A language-specific entry point (the
+/// Urdu tile on the home grid, for example) passes [language], and the
+/// reader opens on the edition it last used in that language, falling back
+/// to [fallbackEdition].
 class QuranTranslationListPage extends StatefulWidget {
-  const QuranTranslationListPage({super.key});
+  /// Two-letter code such as 'ur' or 'en'. Null means "whatever was last
+  /// used", which is the plain Translation tile.
+  final String? language;
+
+  /// Used the first time [language] is opened, before there is a preference.
+  final String? fallbackEdition;
+
+  /// Shown in the app bar instead of the generic title.
+  final String? title;
+
+  const QuranTranslationListPage({
+    super.key,
+    this.language,
+    this.fallbackEdition,
+    this.title,
+  });
 
   @override
   State<QuranTranslationListPage> createState() =>
@@ -47,7 +68,16 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
 
   Future<void> _boot() async {
     await _prefs.load();
-    await _loadEdition(_prefs.edition);
+    final language = widget.language;
+    // The prefs are shared by every entry point, so the edition in memory may
+    // be whatever the Urdu tile last showed. Each entry point starts from its
+    // own saved choice instead.
+    final edition = language == null
+        ? await _prefs.generalEdition()
+        : await _prefs.lastEditionFor(language) ??
+            widget.fallbackEdition ??
+            _prefs.edition;
+    await _loadEdition(edition);
   }
 
   Future<void> _loadEdition(String edition, {bool refresh = false}) async {
@@ -66,7 +96,11 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
           if (mounted) setState(() => _progress = p);
         },
       );
-      if (edition != _prefs.edition) await _prefs.setEdition(edition);
+      if (edition != _prefs.edition) {
+        // A language-specific entry point remembers its choice for that
+        // language only, so the plain Translation tile is left as it was.
+        await _prefs.setEdition(edition, general: widget.language == null);
+      }
       final downloaded = await TranslationData.instance.downloadedEditions();
       if (!mounted) return;
       setState(() {
@@ -132,7 +166,7 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
       appBar: AppBar(
         backgroundColor: ReaderTheme.green,
         foregroundColor: Colors.white,
-        title: const Text('Translation'),
+        title: Text(widget.title ?? 'Translation'),
         actions: [
           IconButton(
             tooltip: 'Search the translation',
@@ -383,7 +417,25 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
   Future<void> _pickTranslation() async {
     final t = ReaderTheme.read(context);
     final controller = TextEditingController();
-    var shown = TranslationEdition.all;
+    final language = widget.language;
+
+    // On a language-specific entry point, start by showing only that
+    // language: landing on the Urdu tile and being offered every other
+    // language first helps nobody. "All languages" opens it up.
+    var allLanguages = language == null;
+    var query = '';
+
+    List<TranslationEdition> visible() => TranslationEdition.all.where((e) {
+          if (!allLanguages &&
+              TranslationTypography.languageOf(e.code) != language) {
+            return false;
+          }
+          if (query.isEmpty) return true;
+          return e.label.toLowerCase().contains(query) ||
+              e.code.toLowerCase().contains(query);
+        }).toList();
+
+    var shown = visible();
 
     final picked = await showModalBottomSheet<TranslationEdition>(
       context: context,
@@ -407,19 +459,22 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
                     isDense: true,
                   ),
                   onChanged: (q) {
-                    final query = q.trim().toLowerCase();
-                    setSheet(() {
-                      shown = query.isEmpty
-                          ? TranslationEdition.all
-                          : TranslationEdition.all
-                              .where((e) =>
-                                  e.label.toLowerCase().contains(query) ||
-                                  e.code.toLowerCase().contains(query))
-                              .toList();
-                    });
+                    query = q.trim().toLowerCase();
+                    setSheet(() => shown = visible());
                   },
                 ),
               ),
+              if (language != null)
+                SwitchListTile(
+                  dense: true,
+                  title: const Text('All languages'),
+                  value: allLanguages,
+                  activeThumbColor: ReaderTheme.green,
+                  onChanged: (v) => setSheet(() {
+                    allLanguages = v;
+                    shown = visible();
+                  }),
+                ),
               Expanded(
                 child: ListView.builder(
                   controller: scroll,
