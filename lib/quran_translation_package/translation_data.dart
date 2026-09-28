@@ -55,7 +55,6 @@ class TranslationData {
 
   static String _cacheKey(String edition) => 'translation_$edition';
   static const _downloadedKey = 'translation_downloaded_editions';
-  static const _legacyKey = 'translationData';
 
   final Map<String, List<TranslationSurahClass>> _memory = {};
   final Map<String, Future<List<TranslationSurahClass>>> _inFlight = {};
@@ -89,10 +88,6 @@ class TranslationData {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     final key = _cacheKey(edition);
-
-    // The old reader's single cache. Nothing reads it any more, and
-    // SharedPreferences loads every key into memory at startup.
-    if (prefs.containsKey(_legacyKey)) await prefs.remove(_legacyKey);
 
     if (!forceRefresh) {
       final raw = prefs.getString(key);

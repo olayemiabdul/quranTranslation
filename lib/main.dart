@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'azan/azan_service.dart';
 import 'quran_byPage/quran_pages.dart' show bootQcfFonts;
@@ -30,6 +31,9 @@ void main() async {
   unawaited(AzanService.instance.rescheduleFromSaved());
   // Unpack/load the Madinah Mushaf page fonts in the background.
   unawaited(bootQcfFonts());
+  // Drop the caches of readers that have been replaced. Not awaited, so it
+  // never delays the first frame.
+  unawaited(_cleanUpLegacyCaches());
 
   // Add error handling for Firebase initialization
   try {
@@ -48,6 +52,23 @@ void main() async {
   ));
 }
 
+/// The old Urdu reader cached the whole Urdu Quran under
+/// 'UrduTranslationData', the old Translation reader under
+/// 'translationData', and the old page-by-page reader (replaced by the
+/// Mushaf) under 'quranPageData'. Nothing reads them any more, but they sit
+/// in SharedPreferences, which is loaded into memory whole on every launch.
+Future<void> _cleanUpLegacyCaches() async {
+  try {
+    final p = await SharedPreferences.getInstance();
+    if (p.getBool('legacy_cache_cleared_v2') == true) return;
+    for (final key in const ['UrduTranslationData', 'translationData', 'quranPageData']) {
+      await p.remove(key);
+    }
+    await p.setBool('legacy_cache_cleared_v2', true);
+  } catch (e) {
+    debugPrint('Legacy cache cleanup failed: $e');
+  }
+}
 
 class CompleteQuranApp extends StatelessWidget {
   const CompleteQuranApp({super.key});
