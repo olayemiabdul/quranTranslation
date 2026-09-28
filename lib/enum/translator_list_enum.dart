@@ -7,9 +7,9 @@ enum TranslatorName {
 
 
   alikhan ('Alikhan Musayev (Azerbaijani)','az.musayev'),
-  arekled (' Preklad I. Hrbek (Czech)','cs.hrbek'),
-  abuRida ('Abu Rida Muhammad ibn Ahmad ibn Rassoul ( German) ','de.aburida'),
-  bubenheimandElyas(  ' Bubenheim and Elyas (German)','de.bubenheim'),
+  arekled ('Preklad I. Hrbek (Czech)','cs.hrbek'),
+  abuRida ('Abu Rida Muhammad ibn Ahmad ibn Rassoul (German)','de.aburida'),
+  bubenheimandElyas('Bubenheim and Elyas (German)','de.bubenheim'),
 
   zaidan('Amir Zaidan (German)','de.zaidan'),
   Maldives('Maldives','dv.divehi' ),
@@ -44,6 +44,15 @@ enum TranslatorName {
   Ali('Ali Muhsin Al-Barwani (Swahili)','sw.barwani' ),
   thai('King Fahad Quran Complex(thai)','th.thai' ),
 
+
+  urJalandhry('Fateh Muhammad Jalandhry (Urdu)', 'ur.jalandhry'),
+  urJunagarhi('Muhammad Junagarhi (Urdu)', 'ur.junagarhi'),
+  urMaududi("Abul A'ala Maududi (Urdu)", 'ur.maududi'),
+  urKanzulIman('Ahmed Raza Khan — Kanz ul Iman (Urdu)', 'ur.kanzuliman'),
+  urQadri('Tahir ul Qadri (Urdu)', 'ur.qadri'),
+  urNajafi('Muhammad Hussain Najafi (Urdu)', 'ur.najafi'),
+  urJawadi('Syed Zeeshan Haider Jawadi (Urdu)', 'ur.jawadi'),
+  urAhmedAli('Ahmed Ali (Urdu)', 'ur.ahmedali'),
 
   jalalayn( 'Tafsir Jalalayn', 'id.jalalayn' );
 
