@@ -399,14 +399,14 @@ class _OrganizedEngArabicAyahViewScreenState
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Show Arabic'),
                     value: _prefs.showArabic,
-                    activeColor: ReaderTheme.green,
+                    activeThumbColor: ReaderTheme.green,
                     onChanged: _prefs.setShowArabic,
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Show translation'),
                     value: _prefs.showTranslation,
-                    activeColor: ReaderTheme.green,
+                    activeThumbColor: ReaderTheme.green,
                     onChanged: _prefs.setShowTranslation,
                   ),
                   ListTile(
