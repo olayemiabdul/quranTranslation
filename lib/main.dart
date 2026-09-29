@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 
 
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 
 
@@ -45,6 +46,15 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
   }
+
+  // Lock-screen, notification and headphone controls for recitation. Must
+  // run before the first AudioPlayer is created.
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'tunedtech.uk.quranCompleteUi.audio',
+    androidNotificationChannelName: 'Quran recitation',
+    androidNotificationOngoing: true,
+    androidStopForegroundOnPause: true,
+  );
 
   runApp(ChangeNotifierProvider(
     create: (_) => ThemeNotifier(),
