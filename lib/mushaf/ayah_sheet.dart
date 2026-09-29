@@ -139,7 +139,10 @@ class _AyahSheetState extends State<AyahSheet> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              initialValue: _reciter,
+              // A saved edition that has since left the list must not assert.
+              initialValue: ReciterName.values.any((r) => r.text == _reciter)
+                  ? _reciter
+                  : 'ar.alafasy',
               isExpanded: true,
               decoration: const InputDecoration(
                   labelText: 'Reciter', border: OutlineInputBorder(), isDense: true),
