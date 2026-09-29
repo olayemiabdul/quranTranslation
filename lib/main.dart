@@ -64,17 +64,26 @@ void main() async {
 
 /// The old Urdu reader cached the whole Urdu Quran under
 /// 'UrduTranslationData', the old Translation reader under
-/// 'translationData', and the old page-by-page reader (replaced by the
-/// Mushaf) under 'quranPageData'. Nothing reads them any more, but they sit
+/// 'translationData', the old page-by-page reader (replaced by the Mushaf)
+/// under 'quranPageData', and the old Study reader two more full copies
+/// under 'quranArabicData' and 'quranEnglishData'. Nothing reads them any more, but they sit
 /// in SharedPreferences, which is loaded into memory whole on every launch.
 Future<void> _cleanUpLegacyCaches() async {
   try {
     final p = await SharedPreferences.getInstance();
-    if (p.getBool('legacy_cache_cleared_v2') == true) return;
-    for (final key in const ['UrduTranslationData', 'translationData', 'quranPageData']) {
+    // v3 adds the Study reader's keys, so phones that already ran v2 still
+    // drop them.
+    if (p.getBool('legacy_cache_cleared_v3') == true) return;
+    for (final key in const [
+      'quranArabicData',
+      'quranEnglishData',
+      'UrduTranslationData',
+      'translationData',
+      'quranPageData',
+    ]) {
       await p.remove(key);
     }
-    await p.setBool('legacy_cache_cleared_v2', true);
+    await p.setBool('legacy_cache_cleared_v3', true);
   } catch (e) {
     debugPrint('Legacy cache cleanup failed: $e');
   }
