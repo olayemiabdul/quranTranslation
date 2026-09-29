@@ -22,6 +22,10 @@ class QuranData {
 
   List<Surah>? get cached => _surahs;
 
+  /// Whether the Quran is saved on this device, without loading it.
+  static Future<bool> isOnDevice() async =>
+      (await SharedPreferences.getInstance()).containsKey(_cacheKey);
+
   /// Returns the 114 surahs, from memory, then disk, then the network.
   /// Throws only when there is nothing cached and the network fails.
   Future<List<Surah>> load({bool forceRefresh = false}) {
