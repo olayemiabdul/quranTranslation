@@ -16,6 +16,7 @@ class ReaderTheme {
   static const greenLight = Color(0xFF2F7A4A);
   static const gold = Color(0xFFC9A227);
   static const goldSoft = Color(0xFFE8D48A);
+  static const greenDeep = Color(0xFF16452B);
 
   /// Reading surface. Warm paper by day, soft ink at night — never pure
   /// black on pure white, which is tiring over a long session.

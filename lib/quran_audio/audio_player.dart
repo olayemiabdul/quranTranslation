@@ -1,246 +1,512 @@
-
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import '../constant.dart';
-import '../model/Audio_model.dart';
+import 'package:just_audio/just_audio.dart';
 
+import '../quran_ayah/reader_theme.dart';
+import 'audio_catalog.dart';
+import 'audio_prefs.dart';
+import 'quran_audio_service.dart';
+import 'reciter_picker.dart';
+
+/// The recitation player.
+///
+/// Rewritten from the old page, whose most visible fault was a progress
+/// slider hard-coded to `max: 3600` — one hour — while the audio it played
+/// was a single ayah of a minute or two. The handle barely moved, the
+/// position meant nothing, and any recitation longer than an hour threw.
+/// It also had no buffering state, so tapping play looked like nothing
+/// happening, and an empty `catch` swallowed every error in silence.
 class SurahAudioPage extends StatefulWidget {
-  final Surah surah;
+  final SurahMeta surah;
 
-  const SurahAudioPage({super.key, required this.surah});
+  /// Ayah to open on, zero-based. Used by "continue listening".
+  final int startIndex;
+  final Duration startPosition;
+
+  const SurahAudioPage({
+    super.key,
+    required this.surah,
+    this.startIndex = 0,
+    this.startPosition = Duration.zero,
+  });
 
   @override
-  _SurahAudioPageState createState() => _SurahAudioPageState();
+  State<SurahAudioPage> createState() => _SurahAudioPageState();
 }
 
 class _SurahAudioPageState extends State<SurahAudioPage> {
-  AudioPlayer audioPlayer = AudioPlayer();
-  late List<String> audioUrls;
-  int currentIndex = 0;
-  bool isPlaying = false;
-  Duration duration = Duration.zero;
-  Duration position = Duration.zero;
-  //
+  final _audio = QuranAudioService.instance;
+  final _prefs = AudioPrefs.instance;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    audioUrls = widget.surah.ayahs.map((ayah) => ayah.audio.toString()).toList();
-
-    audioPlayer.onPlayerStateChanged.listen((state) {
-      if (mounted) {
-        setState(() {
-          isPlaying = state == PlayerState.playing;
-        });
-      }
-    });
-
-    audioPlayer.onDurationChanged.listen((newDuration) {
-      if (mounted) {
-        setState(() {
-          duration = newDuration;
-        });
-      }
-    });
-
-    audioPlayer.onPositionChanged.listen((newPosition) {
-      if (mounted) {
-        setState(() {
-          position = newPosition;
-        });
-      }
-    });
-
-    audioPlayer.onPlayerComplete.listen((_) {
-      if (currentIndex < audioUrls.length - 1) {
-        currentIndex++;
-        playAudio();
-      } else {
-        if (mounted) {
-          setState(() {
-            isPlaying = false;
-            currentIndex = 0;
-          });
-        }
-      }
-    });
+    _open();
   }
 
-  Future<void> playSurah() async {
-    playAudio();
-  }
-
-  Future<void> playAudio() async {
-    try {
-      String url = audioUrls[currentIndex];
-      await audioPlayer.play(UrlSource(url));
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isPlaying = false;
-        });
-      }
-      // Handle error gracefully
-    }
-  }
-  Future<void> stop() async {
-   await audioPlayer.stop();
-  }
   @override
   void dispose() {
-    audioPlayer.dispose();
+    // Playback deliberately continues: leaving this screen should not stop
+    // the recitation. We only stop tracking it.
+    _audio.saveNow();
     super.dispose();
   }
 
-  String formatTime(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return [
-      if (duration.inHours > 0) hours,
-      minutes,
-      seconds,
-    ].join(':');
+  /// What is actually loaded: the player carries on into the next surah by
+  /// itself, and this page follows it.
+  SurahMeta get _surah => _audio.currentSurah ?? widget.surah;
+
+  Future<void> _open() async {
+    try {
+      await _audio.loadSurah(
+        widget.surah,
+        startIndex: widget.startIndex,
+        startPosition: widget.startPosition,
+        // Reopening what is already loaded (from the mini bar) should not
+        // un-pause it.
+        autoPlay: _audio.currentSurah?.number != widget.surah.number,
+      );
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Could not start the recitation. Check your connection and try again.',
+        );
+      }
+    }
   }
 
-  // A fixed light design: pin the light theme so a dark app theme cannot
-  // turn its default-coloured text white on these light surfaces.
   @override
-  Widget build(BuildContext context) =>
-      Theme(data: ThemeData.light(), child: Builder(builder: _buildLight));
+  Widget build(BuildContext context) {
+    final t = ReaderTheme.of(context);
 
-  Widget _buildLight(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.surah.name),
-      ),
-      body: Container(
-        height: MediaQuery.of(context).size.height,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-              'assets/images/mosque2.png',
-            ),
-            fit: BoxFit.cover,
+    return AnimatedBuilder(
+      animation: _prefs,
+      // Rebuilt on every ayah change, which is also when a new surah loads.
+      builder: (context, _) => StreamBuilder<int?>(
+        stream: _audio.currentIndexStream,
+        builder: (context, _) => Scaffold(
+          backgroundColor: t.paper,
+          appBar: AppBar(
+            backgroundColor: ReaderTheme.green,
+            foregroundColor: Colors.white,
+            title: Text(_surah.englishName),
+            actions: [
+              IconButton(
+                tooltip: 'Jump to an ayah',
+                icon: const Icon(Icons.list),
+                onPressed: _openAyahList,
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
-          ),
-          color: Colors.white,
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 50),
-            Container(
-              height: 200,
-              width: 350,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+          body: SafeArea(
+            child: Column(
+              children: [
+                if (_error != null) _errorBar(t),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+                    child: Column(
+                      children: [
+                        _surahCard(t),
+                        const SizedBox(height: 24),
+                        _nowPlaying(t),
+                        const SizedBox(height: 8),
+                        _progress(t),
+                        const SizedBox(height: 8),
+                        _transport(t),
+                        const SizedBox(height: 20),
+                        _options(t),
+                      ],
+                    ),
+                  ),
                 ),
-                color: gridContainerColor,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _errorBar(ReaderTheme t) => Container(
+    width: double.infinity,
+    color: const Color(0xFFFFF1CC),
+    padding: const EdgeInsets.all(12),
+    child: Row(
+      children: [
+        const Icon(Icons.warning_amber_rounded, color: Color(0xFF8A6100)),
+        const SizedBox(width: 10),
+        Expanded(child: Text(_error!)),
+        TextButton(
+          onPressed: () {
+            setState(() => _error = null);
+            _open();
+          },
+          child: const Text('Retry'),
+        ),
+      ],
+    ),
+  );
+
+  /// Sized by the screen, not the fixed 200x350 box the old page used,
+  /// which overflowed on small phones.
+  Widget _surahCard(ReaderTheme t) {
+    final width = MediaQuery.sizeOf(context).width;
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: width * 0.42, maxWidth: 420),
+      padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
+      decoration: BoxDecoration(
+        color: ReaderTheme.green,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: ReaderTheme.gold, width: 2),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '${_surah.number} · ${_surah.englishName}',
+            style: const TextStyle(color: ReaderTheme.goldSoft, fontSize: 14),
+          ),
+          const SizedBox(height: 14),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _surah.name,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(
+                fontFamily: 'Kitab-Bold',
+                color: Colors.white,
+                fontSize: 42,
+                height: 1.6,
               ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 130),
-                        child: Text(widget.surah.number.toString()),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '${_surah.isMakki ? "Makki" : "Madani"} · ${_surah.numberOfAyahs} ayahs',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nowPlaying(ReaderTheme t) => StreamBuilder<int?>(
+    stream: _audio.currentIndexStream,
+    builder: (context, snap) {
+      final index = snap.data ?? widget.startIndex;
+      return Text(
+        'Ayah ${index + 1} of ${_surah.numberOfAyahs}',
+        style: TextStyle(color: t.inkSoft, fontSize: 14),
+      );
+    },
+  );
+
+  /// A real slider: bound to the actual duration of what is playing, with
+  /// the buffered amount shown behind it.
+  Widget _progress(ReaderTheme t) => StreamBuilder<Duration?>(
+    stream: _audio.durationStream,
+    builder: (context, durationSnap) {
+      final duration = durationSnap.data ?? Duration.zero;
+      return StreamBuilder<Duration>(
+        stream: _audio.positionStream,
+        builder: (context, positionSnap) {
+          final position = positionSnap.data ?? Duration.zero;
+          final max = duration.inMilliseconds.toDouble();
+          final value = position.inMilliseconds
+              .clamp(0, duration.inMilliseconds)
+              .toDouble();
+
+          return Column(
+            children: [
+              StreamBuilder<Duration>(
+                stream: _audio.bufferedPositionStream,
+                builder: (context, bufferedSnap) {
+                  final buffered = bufferedSnap.data ?? Duration.zero;
+                  return SizedBox(
+                    height: 4,
+                    child: LinearProgressIndicator(
+                      value: max <= 0
+                          ? 0
+                          : (buffered.inMilliseconds / max).clamp(0.0, 1.0),
+                      backgroundColor: t.divider,
+                      color: ReaderTheme.goldSoft,
+                    ),
+                  );
+                },
+              ),
+              Slider(
+                value: max <= 0 ? 0 : value,
+                min: 0,
+                // The real length of this ayah, not a guess.
+                max: max <= 0 ? 1 : max,
+                activeColor: ReaderTheme.green,
+                // Seeking should not force playback to start, which the
+                // old slider did by calling resume() on every drag.
+                onChanged: max <= 0
+                    ? null
+                    : (v) => _audio.seek(Duration(milliseconds: v.round())),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _format(position),
+                      style: TextStyle(color: t.inkSoft, fontSize: 12),
+                    ),
+                    Text(
+                      _format(duration - position),
+                      style: TextStyle(color: t.inkSoft, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  Widget _transport(ReaderTheme t) => StreamBuilder<PlayerState>(
+    stream: _audio.playerStateStream,
+    builder: (context, snap) {
+      final state = snap.data;
+      final processing = state?.processingState;
+      final playing = state?.playing ?? false;
+      final busy =
+          processing == ProcessingState.loading ||
+          processing == ProcessingState.buffering;
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            tooltip: 'Previous ayah',
+            iconSize: 38,
+            color: t.ink,
+            icon: const Icon(Icons.skip_previous),
+            onPressed: _audio.previousAyah,
+          ),
+          const SizedBox(width: 12),
+          // Buffering is shown, not hidden. Tapping play on a slow
+          // connection used to look like nothing had happened.
+          SizedBox(
+            width: 72,
+            height: 72,
+            child: busy
+                ? const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: CircularProgressIndicator(
+                      color: ReaderTheme.green,
+                      strokeWidth: 3,
+                    ),
+                  )
+                : Material(
+                    color: ReaderTheme.green,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _audio.togglePlay,
+                      child: Icon(
+                        playing ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 40,
                       ),
-                      Text('- ${widget.surah.englishName}'),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  Text(
-                    widget.surah.name,
-                    style: const TextStyle(
-                      wordSpacing: 2,
-                      fontFamily: 'Kitab-Bold',
-                      color: Colors.white,
-                      fontSize: 46,
                     ),
                   ),
-                ],
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            tooltip: 'Next ayah',
+            iconSize: 38,
+            color: t.ink,
+            icon: const Icon(Icons.skip_next),
+            onPressed: _audio.nextAyah,
+          ),
+        ],
+      );
+    },
+  );
+
+  Widget _options(ReaderTheme t) => Column(
+    children: [
+      _optionTile(
+        t,
+        icon: Icons.record_voice_over,
+        label: 'Reciter',
+        value: reciterLabels[_prefs.reciter] ?? _prefs.reciter,
+        onTap: () async {
+          final picked = await showReciterPicker(context, _prefs.reciter);
+          if (picked == null || picked == _prefs.reciter) return;
+          await _prefs.setReciter(picked);
+          // Keeps your place instead of restarting the surah.
+          await _audio.reloadForCurrentReciter();
+        },
+      ),
+      _optionTile(
+        t,
+        icon: Icons.repeat,
+        label: 'Repeat',
+        value: switch (_prefs.repeat) {
+          AudioRepeat.off => 'Off',
+          AudioRepeat.ayah => 'This ayah',
+          AudioRepeat.surah => 'Whole surah',
+        },
+        onTap: () async {
+          const order = [AudioRepeat.off, AudioRepeat.ayah, AudioRepeat.surah];
+          final next = order[(order.indexOf(_prefs.repeat) + 1) % order.length];
+          await _audio.setRepeat(next);
+        },
+      ),
+      _optionTile(
+        t,
+        icon: Icons.speed,
+        label: 'Speed',
+        value: '${_prefs.speed.toStringAsFixed(2)}x',
+        onTap: () async {
+          const speeds = [0.75, 1.0, 1.25, 1.5];
+          final i = speeds.indexWhere((s) => (s - _prefs.speed).abs() < 0.01);
+          await _audio.setSpeed(speeds[(i + 1) % speeds.length]);
+        },
+      ),
+      _optionTile(
+        t,
+        icon: Icons.bedtime_outlined,
+        label: 'Sleep timer',
+        value: _sleepLabel(),
+        onTap: _openSleepTimer,
+      ),
+      _optionTile(
+        t,
+        icon: Icons.network_cell,
+        label: 'Audio quality',
+        value:
+            '${_prefs.dataSaver ? 'Data saver' : 'High'} (${AudioCatalog.bitrateFor(_prefs.reciter, dataSaver: _prefs.dataSaver)} kbps)',
+        onTap: () async {
+          await _prefs.setBitrate(_prefs.bitrate == 128 ? 64 : 128);
+          await _audio.reloadForCurrentReciter();
+        },
+      ),
+    ],
+  );
+
+  Widget _optionTile(
+    ReaderTheme t, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(icon, color: ReaderTheme.green, size: 20),
+    title: Text(label, style: TextStyle(fontSize: 14, color: t.ink)),
+    trailing: Text(value, style: TextStyle(fontSize: 13, color: t.inkSoft)),
+    onTap: onTap,
+  );
+
+  String _sleepLabel() {
+    final left = _audio.sleepRemaining;
+    if (left == null) return 'Off';
+    final minutes = left.inMinutes + 1;
+    return '$minutes min left';
+  }
+
+  Future<void> _openSleepTimer() async {
+    final t = ReaderTheme.read(context);
+    final minutes = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: t.paper,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Stop playing after',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
             ),
-            Slider(
-              value: position.inSeconds.toDouble(),
-              min: 0,
-              max: 3600,
-              onChanged: (value) async {
-                final newPosition = Duration(seconds: value.toInt());
-                await audioPlayer.seek(newPosition);
-                await audioPlayer.resume();
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 50),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(formatTime(position)),
-                  Text(formatTime(duration - position)),
-                ],
+            for (final m in [10, 15, 30, 45, 60])
+              ListTile(
+                title: Text('$m minutes'),
+                onTap: () => Navigator.pop(ctx, m),
               ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(left: 100),
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      if (currentIndex > 0) {
-                        currentIndex--;
-                        stop();
-                        playSurah();
-                      }
-                    },
-                    child: const Icon(Icons.skip_previous, size: 40),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      if (isPlaying) {
-                        audioPlayer.pause();
-                        setState(() {
-                          isPlaying = false;
-                        });
-                      } else {
-                        playSurah();
-                      }
-                    },
-                    icon: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                    ),
-                    iconSize: 50,
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      if (currentIndex < audioUrls.length - 1) {
-                        currentIndex++;
-                        playSurah();
-                      }
-                    },
-                    icon: const Icon(Icons.skip_next, size: 40),
-                  ),
-                ],
-              ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Turn off'),
+              onTap: () => Navigator.pop(ctx, 0),
             ),
           ],
         ),
       ),
     );
+
+    if (minutes == null) return;
+    if (minutes == 0) {
+      _audio.cancelSleepTimer();
+    } else {
+      _audio.startSleepTimer(Duration(minutes: minutes));
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _openAyahList() {
+    final t = ReaderTheme.read(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: t.paper,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        builder: (_, scroll) => StreamBuilder<int?>(
+          stream: _audio.currentIndexStream,
+          builder: (context, snap) {
+            final current = snap.data ?? 0;
+            return ListView.builder(
+              controller: scroll,
+              itemCount: _surah.numberOfAyahs,
+              itemBuilder: (context, i) => ListTile(
+                selected: i == current,
+                selectedTileColor: t.highlight,
+                leading: CircleAvatar(
+                  radius: 15,
+                  backgroundColor: i == current
+                      ? ReaderTheme.gold
+                      : ReaderTheme.green,
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+                title: Text('Ayah ${i + 1}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _audio.goToAyah(i);
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static String _format(Duration d) {
+    if (d.isNegative) d = Duration.zero;
+    String two(int n) => n.toString().padLeft(2, '0');
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60);
+    final seconds = d.inSeconds.remainder(60);
+    return hours > 0
+        ? '$hours:${two(minutes)}:${two(seconds)}'
+        : '${two(minutes)}:${two(seconds)}';
   }
 }
