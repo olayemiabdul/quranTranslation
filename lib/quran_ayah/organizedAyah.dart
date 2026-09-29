@@ -1,10 +1,12 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:provider/provider.dart';
 
 import '../provider/theme_provider.dart';
+import '../quran_audio/audio_catalog.dart';
+import '../quran_audio/quran_audio_service.dart';
 import '../quran_byPage/quran_pages.dart';
 import 'ayah_actions_sheet.dart';
 import 'ayah_page.dart';
@@ -33,15 +35,19 @@ class OrganizedAyahViewScreen extends StatefulWidget {
   });
 
   @override
-  State<OrganizedAyahViewScreen> createState() => _OrganizedAyahViewScreenState();
+  State<OrganizedAyahViewScreen> createState() =>
+      _OrganizedAyahViewScreenState();
 }
 
 class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   static const int totalPages = 604;
 
   final _prefs = ReaderPrefs.instance;
-  final AudioPlayer _player = AudioPlayer();
-  StreamSubscription<void>? _completeSub;
+  // The app's one player, so the reader and the Listen tab never recite
+  // over each other.
+  final _audio = QuranAudioService.instance;
+  StreamSubscription<Object>? _completeSub;
+  StreamSubscription<Object?>? _ownerSub;
 
   late final PageController _controller;
   List<QuranPage> _pages = const [];
@@ -54,14 +60,21 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   void initState() {
     super.initState();
     _controller = PageController();
-    _completeSub = _player.onPlayerComplete.listen((_) => _playNext());
+    _completeSub = _audio.clipCompleted
+        .where((o) => o == this)
+        .listen((_) => _playNext());
+    // Something else took the player: the reader is no longer reciting.
+    _ownerSub = _audio.clipOwnerChanges.where((o) => o != this).listen((_) {
+      if (mounted && _playing != null) setState(() => _playing = null);
+    });
     _boot();
   }
 
   @override
   void dispose() {
     _completeSub?.cancel();
-    _player.dispose();
+    _ownerSub?.cancel();
+    _audio.stopClip(this);
     _controller.dispose();
     super.dispose();
   }
@@ -121,33 +134,35 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   }
 
   // ------------------------------------------------------------ recitation
-  /// Reciters the CDN does not publish at 128 kbps (it 404s there).
-  static const _bitrates = <String, int>{
-    'ar.abdulbasitmurattal': 192,
-    'ar.abdurrahmaansudais': 192,
-    'ar.abdulsamad': 64,
-    'en.walk': 192,
-    'fa.hedayatfarfooladvand': 40,
-    'ur.khan': 64,
-  };
-
   Future<void> _play(Ayah ayah) async {
     setState(() => _playing = ayah);
     final page = ayah.page;
     if (page != _page) _goToPage(page);
 
-    final bitrate = _bitrates[_prefs.reciter] ?? 128;
-    final url =
-        'https://cdn.islamic.network/quran/audio/$bitrate/${_prefs.reciter}/${ayah.number}.mp3';
+    final surah = _surahByNumber(ayah.surahNumber);
     try {
-      await _player.stop();
-      await _player.play(UrlSource(url));
+      await _audio.playClip(
+        owner: this,
+        url: AudioCatalog.urlFor(
+          ayahNumber: ayah.number,
+          edition: _prefs.reciter,
+        ),
+        item: MediaItem(
+          id: 'reader:${ayah.number}',
+          title:
+              '${surah?.englishName ?? 'Surah ${ayah.surahNumber}'} · Ayah ${ayah.numberInSurah}',
+          album: 'Easy Read',
+          artist: QuranAudioService.reciterLabel(_prefs.reciter),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _playing = null);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Recitation needs an internet connection.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recitation needs an internet connection.'),
+        ),
+      );
     }
   }
 
@@ -171,7 +186,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
   }
 
   void _stop() {
-    _player.stop();
+    _audio.stopClip(this);
     if (mounted) setState(() => _playing = null);
   }
 
@@ -206,7 +221,9 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
         backgroundColor: t.paper,
         appBar: _appBar(t),
         body: !_ready
-            ? const Center(child: CircularProgressIndicator(color: ReaderTheme.green))
+            ? const Center(
+                child: CircularProgressIndicator(color: ReaderTheme.green),
+              )
             : Column(
                 children: [
                   _runningHead(t),
@@ -237,8 +254,10 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
     return AppBar(
       backgroundColor: ReaderTheme.green,
       foregroundColor: Colors.white,
-      title: Text('Easy Read  ·  Page $_page',
-          style: const TextStyle(fontSize: 17)),
+      title: Text(
+        'Easy Read  ·  Page $_page',
+        style: const TextStyle(fontSize: 17),
+      ),
       actions: [
         IconButton(
           tooltip: 'Go to page',
@@ -250,8 +269,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
           icon: const Icon(Icons.auto_stories_outlined),
           onPressed: () => Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (_) => QuranByPages(initialPage: _page)),
+            MaterialPageRoute(builder: (_) => QuranByPages(initialPage: _page)),
           ),
         ),
         IconButton(
@@ -273,121 +291,170 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(c?.englishName ?? '',
-              style: TextStyle(color: t.inkSoft, fontSize: 13)),
-          Text(c?.surahName ?? '',
-              style: TextStyle(
-                  fontFamily: 'Kitab-Bold', fontSize: 17, color: t.ink)),
-          Text('Juz ${_current.juz}',
-              style: TextStyle(color: t.inkSoft, fontSize: 13)),
+          Text(
+            c?.englishName ?? '',
+            style: TextStyle(color: t.inkSoft, fontSize: 13),
+          ),
+          Text(
+            c?.surahName ?? '',
+            style: TextStyle(
+              fontFamily: 'Kitab-Bold',
+              fontSize: 17,
+              color: t.ink,
+            ),
+          ),
+          Text(
+            'Juz ${_current.juz}',
+            style: TextStyle(color: t.inkSoft, fontSize: 13),
+          ),
         ],
       ),
     );
   }
 
   Widget _playerBar(ReaderTheme t) => Container(
-        color: ReaderTheme.green,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        child: Row(
-          children: [
-            const Icon(Icons.graphic_eq, color: ReaderTheme.goldSoft),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Reciting ${_playing!.surahNumber}:${_playing!.numberInSurah}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Stop',
-              icon: const Icon(Icons.stop_circle_outlined, color: Colors.white),
-              onPressed: _stop,
-            ),
-          ],
-        ),
-      );
-
-  Widget _bottomBar(ReaderTheme t) => Container(
-        color: ReaderTheme.green,
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _barButton(Icons.menu_book, 'Surahs', _openSurahIndex),
-              _barButton(Icons.grid_view, 'Juz', _openJuzIndex),
-              _barButton(Icons.bookmarks_outlined, 'Saved', _openBookmarks),
-              _barButton(Icons.play_circle_outline, 'Listen', () {
-                final first = _current.primary?.ayahs.first;
-                if (first != null) _play(first);
-              }),
-              _barButton(Icons.text_fields, 'Display', _openDisplay),
-            ],
+    color: ReaderTheme.green,
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+    child: Row(
+      children: [
+        const Icon(Icons.graphic_eq, color: ReaderTheme.goldSoft),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Reciting ${_playing!.surahNumber}:${_playing!.numberInSurah}',
+            style: const TextStyle(color: Colors.white),
           ),
         ),
-      );
+        IconButton(
+          tooltip: 'Stop',
+          icon: const Icon(Icons.stop_circle_outlined, color: Colors.white),
+          onPressed: _stop,
+        ),
+      ],
+    ),
+  );
+
+  Widget _bottomBar(ReaderTheme t) => Container(
+    color: ReaderTheme.green,
+    child: SafeArea(
+      top: false,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _barButton(Icons.menu_book, 'Surahs', _openSurahIndex),
+          _barButton(Icons.grid_view, 'Juz', _openJuzIndex),
+          _barButton(Icons.bookmarks_outlined, 'Saved', _openBookmarks),
+          _barButton(Icons.play_circle_outline, 'Listen', () {
+            final first = _current.primary?.ayahs.first;
+            if (first != null) _play(first);
+          }),
+          _barButton(Icons.text_fields, 'Display', _openDisplay),
+        ],
+      ),
+    ),
+  );
 
   Widget _barButton(IconData icon, String label, VoidCallback onTap) => InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(height: 2),
-            Text(label,
-                style: const TextStyle(color: Colors.white, fontSize: 11)),
-          ]),
-        ),
-      );
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+  );
 
   // ------------------------------------------------------------- navigation
   void _openSurahIndex() => _sheet(
-        title: 'Surahs',
-        itemCount: widget.surahs.length,
-        builder: (i) {
-          final s = widget.surahs[i];
-          final page = s.ayahs.isEmpty ? 1 : s.ayahs.first.page;
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: ReaderTheme.green,
-              child: Text('${s.number}',
-                  style: const TextStyle(color: Colors.white, fontSize: 13)),
-            ),
-            title: Text(s.englishName),
-            subtitle: Text(
-                '${s.isMakki ? "Makki" : "Madani"} · ${s.ayahs.length} ayahs · page $page'),
-            trailing: Text(s.name,
-                style: const TextStyle(fontFamily: 'Kitab-Bold', fontSize: 19)),
-            onTap: () {
-              Navigator.pop(context);
-              _goToPage(page);
-            },
-          );
+    title: 'Surahs',
+    itemCount: widget.surahs.length,
+    builder: (i) {
+      final s = widget.surahs[i];
+      final page = s.ayahs.isEmpty ? 1 : s.ayahs.first.page;
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundColor: ReaderTheme.green,
+          child: Text(
+            '${s.number}',
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+        title: Text(s.englishName),
+        subtitle: Text(
+          '${s.isMakki ? "Makki" : "Madani"} · ${s.ayahs.length} ayahs · page $page',
+        ),
+        trailing: Text(
+          s.name,
+          style: const TextStyle(fontFamily: 'Kitab-Bold', fontSize: 19),
+        ),
+        onTap: () {
+          Navigator.pop(context);
+          _goToPage(page);
         },
       );
+    },
+  );
 
   static const _juzStart = [
-    1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282,
-    302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+    1,
+    22,
+    42,
+    62,
+    82,
+    102,
+    121,
+    142,
+    162,
+    182,
+    201,
+    222,
+    242,
+    262,
+    282,
+    302,
+    322,
+    342,
+    362,
+    382,
+    402,
+    422,
+    442,
+    462,
+    482,
+    502,
+    522,
+    542,
+    562,
+    582,
   ];
 
   void _openJuzIndex() => _sheet(
-        title: 'Juz',
-        itemCount: 30,
-        builder: (i) => ListTile(
-          leading: CircleAvatar(
-            backgroundColor: ReaderTheme.green,
-            child: Text('${i + 1}',
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
-          ),
-          title: Text('Juz ${i + 1}'),
-          subtitle: Text('Starts on page ${_juzStart[i]}'),
-          onTap: () {
-            Navigator.pop(context);
-            _goToPage(_juzStart[i]);
-          },
+    title: 'Juz',
+    itemCount: 30,
+    builder: (i) => ListTile(
+      leading: CircleAvatar(
+        backgroundColor: ReaderTheme.green,
+        child: Text(
+          '${i + 1}',
+          style: const TextStyle(color: Colors.white, fontSize: 13),
         ),
-      );
+      ),
+      title: Text('Juz ${i + 1}'),
+      subtitle: Text('Starts on page ${_juzStart[i]}'),
+      onTap: () {
+        Navigator.pop(context);
+        _goToPage(_juzStart[i]);
+      },
+    ),
+  );
 
   void _openBookmarks() {
     final keys = _prefs.bookmarks.toList()
@@ -398,9 +465,13 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
       });
 
     if (keys.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Tap any ayah, then the bookmark icon, to save it here.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tap any ayah, then the bookmark icon, to save it here.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -414,7 +485,9 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
         final ayah = _findAyah(parts[0], parts[1]);
         return ListTile(
           leading: const Icon(Icons.bookmark, color: ReaderTheme.gold),
-          title: Text('${surah?.englishName ?? "Surah ${parts[0]}"} ${keys[i]}'),
+          title: Text(
+            '${surah?.englishName ?? "Surah ${parts[0]}"} ${keys[i]}',
+          ),
           subtitle: ayah == null ? null : Text('Page ${ayah.page}'),
           trailing: IconButton(
             tooltip: 'Remove',
@@ -448,46 +521,55 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Display',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: t.ink)),
+                Text(
+                  'Display',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: t.ink,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.text_fields, size: 18),
-                  Expanded(
-                    child: Slider(
-                      value: _prefs.fontSize,
-                      min: 16,
-                      max: 44,
-                      divisions: 14,
-                      activeColor: ReaderTheme.green,
-                      label: _prefs.fontSize.round().toString(),
-                      onChanged: _prefs.setFontSize,
+                Row(
+                  children: [
+                    const Icon(Icons.text_fields, size: 18),
+                    Expanded(
+                      child: Slider(
+                        value: _prefs.fontSize,
+                        min: 16,
+                        max: 44,
+                        divisions: 14,
+                        activeColor: ReaderTheme.green,
+                        label: _prefs.fontSize.round().toString(),
+                        onChanged: _prefs.setFontSize,
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.text_fields, size: 28),
-                ]),
-                Row(children: [
-                  const Icon(Icons.format_line_spacing, size: 18),
-                  Expanded(
-                    child: Slider(
-                      value: _prefs.lineHeight,
-                      min: 1.6,
-                      max: 3.0,
-                      divisions: 7,
-                      activeColor: ReaderTheme.green,
-                      label: _prefs.lineHeight.toStringAsFixed(1),
-                      onChanged: _prefs.setLineHeight,
+                    const Icon(Icons.text_fields, size: 28),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.format_line_spacing, size: 18),
+                    Expanded(
+                      child: Slider(
+                        value: _prefs.lineHeight,
+                        min: 1.6,
+                        max: 3.0,
+                        divisions: 7,
+                        activeColor: ReaderTheme.green,
+                        label: _prefs.lineHeight.toStringAsFixed(1),
+                        onChanged: _prefs.setLineHeight,
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.format_line_spacing, size: 28),
-                ]),
+                    const Icon(Icons.format_line_spacing, size: 28),
+                  ],
+                ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Show translation'),
-                  subtitle: const Text('One ayah at a time, with meaning below'),
+                  subtitle: const Text(
+                    'One ayah at a time, with meaning below',
+                  ),
                   value: _prefs.showTranslation,
                   activeThumbColor: ReaderTheme.green,
                   onChanged: _prefs.setShowTranslation,
@@ -527,7 +609,9 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () {
               final p = int.tryParse(controller.text);
@@ -558,8 +642,7 @@ class _OrganizedAyahViewScreenState extends State<OrganizedAyahViewScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(title,
-                  style: TextStyle(fontSize: 19, color: t.ink)),
+              child: Text(title, style: TextStyle(fontSize: 19, color: t.ink)),
             ),
             Expanded(
               child: ListView.builder(
