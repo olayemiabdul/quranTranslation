@@ -79,9 +79,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <service
-            android:name=".YourForegroundService"
-            android:foregroundServiceType="location" />
 
     </application>
     <!-- Required to query activities that can process text, see:
