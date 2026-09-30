@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDQNBSqwLB7KbhwuRN-Qho356juSx62EkI',
-    appId: '1:497348146574:web:d9d4b9a918e16add5d60df',
-    messagingSenderId: '497348146574',
-    projectId: 'quran-41498',
-    authDomain: 'quran-41498.firebaseapp.com',
-    storageBucket: 'quran-41498.appspot.com',
-    measurementId: 'G-D170C4GTPJ',
+    apiKey: 'AIzaSyBza0zUn8AXeSQpKAvYzdZSfYHkp21-L20',
+    appId: '1:305792551171:web:67c7c65233e5ab5ad14136',
+    messagingSenderId: '305792551171',
+    projectId: 'quran-app-543b1',
+    authDomain: 'quran-app-543b1.firebaseapp.com',
+    storageBucket: 'quran-app-543b1.firebasestorage.app',
+    measurementId: 'G-ZC75K6FRRW',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB7azQTuFQSUKKn_SiYoAxm2ChaT-yh8zg',
-    appId: '1:497348146574:android:44d3879f1b57046d5d60df',
-    messagingSenderId: '497348146574',
-    projectId: 'quran-41498',
-    storageBucket: 'quran-41498.appspot.com',
+    apiKey: 'AIzaSyC4VXl8OIuIRbhrp7T-Ypg0_H1zI_MEcvM',
+    appId: '1:305792551171:android:7efcd328bf3d81b8d14136',
+    messagingSenderId: '305792551171',
+    projectId: 'quran-app-543b1',
+    storageBucket: 'quran-app-543b1.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyApFz6gcEJTGXPh8_G27nZjA3JDdJfWo6s',
-    appId: '1:497348146574:ios:c64d59c367c353e85d60df',
-    messagingSenderId: '497348146574',
-    projectId: 'quran-41498',
-    storageBucket: 'quran-41498.appspot.com',
-    iosBundleId: 'com.example.quranCompleteUi',
+    apiKey: 'AIzaSyCj-BduvDVJ9n8koUXPIXUl3bs0AJa3yxI',
+    appId: '1:305792551171:ios:4b1479758b3975cbd14136',
+    messagingSenderId: '305792551171',
+    projectId: 'quran-app-543b1',
+    storageBucket: 'quran-app-543b1.firebasestorage.app',
+    iosBundleId: 'tunedtech.uk.quranCompleteUi',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyApFz6gcEJTGXPh8_G27nZjA3JDdJfWo6s',
-    appId: '1:497348146574:ios:c64d59c367c353e85d60df',
-    messagingSenderId: '497348146574',
-    projectId: 'quran-41498',
-    storageBucket: 'quran-41498.appspot.com',
+    apiKey: 'AIzaSyCj-BduvDVJ9n8koUXPIXUl3bs0AJa3yxI',
+    appId: '1:305792551171:ios:7fcdded454920a80d14136',
+    messagingSenderId: '305792551171',
+    projectId: 'quran-app-543b1',
+    storageBucket: 'quran-app-543b1.firebasestorage.app',
     iosBundleId: 'com.example.quranCompleteUi',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDQNBSqwLB7KbhwuRN-Qho356juSx62EkI',
-    appId: '1:497348146574:web:3a91bc032e0cafda5d60df',
-    messagingSenderId: '497348146574',
-    projectId: 'quran-41498',
-    authDomain: 'quran-41498.firebaseapp.com',
-    storageBucket: 'quran-41498.appspot.com',
-    measurementId: 'G-KZ4E5PMDPY',
+    apiKey: 'AIzaSyBza0zUn8AXeSQpKAvYzdZSfYHkp21-L20',
+    appId: '1:305792551171:web:ed9bde64bdb78d96d14136',
+    messagingSenderId: '305792551171',
+    projectId: 'quran-app-543b1',
+    authDomain: 'quran-app-543b1.firebaseapp.com',
+    storageBucket: 'quran-app-543b1.firebasestorage.app',
+    measurementId: 'G-JPXVQEYEKN',
   );
 }

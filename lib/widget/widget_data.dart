@@ -5,6 +5,7 @@ import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:universal_quran/quran_ayah/reader_theme.dart';
 import '../constant.dart';
 import '../hajj_adkar/hajj_screen.dart';
 import '../model/cover_page_model.dart';
@@ -118,9 +119,11 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
     final isDarkTheme = themeNotifier.themeModeNotifier.value == ThemeMode.dark;
 
     QuranCover reading = QuranCover();
+    final t = ReaderTheme.of(context);
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: ReaderTheme.green,
         automaticallyImplyLeading: false,
         title: Text(isMobile ? 'Al-Quran' : 'Quran'),
         actions: [

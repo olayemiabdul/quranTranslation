@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "497348146574",
-    "project_id": "quran-41498",
-    "storage_bucket": "quran-41498.firebasestorage.app"
+    "project_number": "305792551171",
+    "project_id": "quran-app-543b1",
+    "storage_bucket": "quran-app-543b1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:497348146574:android:d0f6d654c0a10a6b5d60df",
+        "mobilesdk_app_id": "1:305792551171:android:7efcd328bf3d81b8d14136",
         "android_client_info": {
-          "package_name": "tunedtech.uk.quranCompleteUi"
+          "package_name": "com.tunedtech.quran_complete_ui"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB7azQTuFQSUKKn_SiYoAxm2ChaT-yh8zg"
+          "current_key": "AIzaSyC4VXl8OIuIRbhrp7T-Ypg0_H1zI_MEcvM"
         }
       ],
       "services": {
