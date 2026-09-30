@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Stops resource shrinking from deleting azan.mp3, which is only
+     referenced by name from Dart and looks unused to the build. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/azan,@raw/notification" />

@@ -108,11 +108,9 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final orientation = MediaQuery.of(context).orientation;
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
 
@@ -151,9 +149,9 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
               PopupMenuItem(
                 child: ElevatedButton(
                   onPressed: () {
-                    Share.share(
-                        'Check out this amazing Quran app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui',
-                        subject: 'Share the App');
+                    SharePlus.instance.share(ShareParams(
+                        text: 'Check out this amazing Quran app: https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui',
+                        subject: 'Share the App'));
                   },
                   child: const Icon(Icons.share, size: 30),
                 ),
@@ -176,7 +174,7 @@ class _CoverPageDetailState extends State<CoverPageDetail> {
                 image: const AssetImage('assets/images/mosque4.jpg'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                    Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                    Colors.white.withValues(alpha: 0.7), BlendMode.dstATop),
               ),
             ),
             child: Column(

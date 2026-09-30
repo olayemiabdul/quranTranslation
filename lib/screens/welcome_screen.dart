@@ -1,6 +1,4 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hijri/hijri_calendar.dart';
@@ -10,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:universal_quran/constant.dart';
 
 
-import '../azan/notification_class.dart';
 import '../quran_ayah/Surah_List.dart';
 
 import '../quran_translation_package/quran_translationList.dart';
@@ -34,19 +31,8 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
   //Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 
 
-  // void getCurrentLocation() async {
-  // Position currentPosition = await currentLocations.determinePosition();
-  // setState(() {
-  // currentLocations.position =currentPosition;
-  // });
-  // }
-  // @override
-  // void initState() {
-  //   // TODO: implement initState
-  //   super.initState();
-  //   //getCurrentLocation(); when implemting geolocation
-  //   currentLocations.getCurrentLocation();
-  // }
+
+
   @override
   Widget build(BuildContext context) {
 
@@ -56,7 +42,7 @@ class _WelcomeScreenPageState extends State<WelcomeScreenPage> {
 
 
     return  Scaffold(
-      appBar: AppBar(title: Text('gtt'),
+      appBar: AppBar(title: const Text('gtt'),
       backgroundColor: gridContainerColor,),
       body: Container(
         height: MediaQuery.of(context).size.height,
@@ -403,9 +389,5 @@ class CustomClipPath extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper oldClipper) {
-    return false;
-    // TODO: implement shouldReclip
-    throw UnimplementedError();
-  }
+  bool shouldReclip(covariant CustomClipper oldClipper) => false;
 }

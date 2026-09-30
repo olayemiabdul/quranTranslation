@@ -33,9 +33,9 @@ class SettingsPageScreen extends StatelessWidget {
 
 
   rateUs() async {
-    const url = 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'; //  app's Play Store URL
-    if (await canLaunch(url)) {
-      await launch(url);
+    final Uri url = Uri.parse('https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui'); //  app's Play Store URL
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       throw 'Could not launch $url';
     }
@@ -49,8 +49,9 @@ class SettingsPageScreen extends StatelessWidget {
   }
 
   shareApp(BuildContext context) {
-    Share.share('https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
-        subject: 'Share Our App');
+    SharePlus.instance.share(ShareParams(
+        text: 'https://play.google.com/store/apps/details?id=com.tunedtech.quran_complete_ui', // Replace with your app's Play Store URL
+        subject: 'Share Our App'));
   }
 
 

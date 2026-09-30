@@ -63,7 +63,7 @@ android {
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        //multiDexEnabled true
+        multiDexEnabled true
     }
       signingConfigs {
              release {
@@ -80,6 +80,9 @@ android {
             // so `flutter run --release` works.
 
                        signingConfig signingConfigs.release
+                       minifyEnabled true
+                       shrinkResources true
+                       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 

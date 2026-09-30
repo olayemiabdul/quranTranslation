@@ -4,15 +4,15 @@ description: "A new Flutter project."
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.1.0+11
+version: 2.0.0+12
 
 
 environment:
-  sdk: '>=3.3.3 <4.0.0'
+  sdk: '>=3.11.0 <4.0.0'
 ios:
   bundleIdentifier: tunedtech.uk.quranCompleteUi
-  version: '1.0.9'
-  buildNumber: '10'
+  version: '2.0.0'
+  buildNumber: '11'
 
 
 dependencies:
@@ -25,7 +25,7 @@ dependencies:
   google_fonts: ^6.2.1
   hijri: ^3.0.0
 
-  geolocator: ^11.0.0
+  geolocator: ^14.1.1
   intl: ^0.19.0
   http: ^1.2.1
   arabic_numbers: ^1.0.0
@@ -33,19 +33,19 @@ dependencies:
 
 
 
-  geocoding: ^3.0.0
+  geocoding: ^5.0.0
   geocode: ^1.0.3
   cloud_firestore: ^4.14.0
-  share_plus: ^9.0.0
+  share_plus: ^13.3.0
 
   email_validator: ^2.1.17
 
-  url_launcher: ^6.1.5
+  url_launcher: ^6.3.2
 
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.5.5
 
 
-  flutter_local_notifications:
+  flutter_local_notifications: ^18.0.1
 
   firebase_core: ^2.32.0
 
@@ -53,10 +53,14 @@ dependencies:
 
   permission_handler: ^11.3.1
 
-  flutter_timezone: ^3.0.1
+  flutter_timezone: ^5.1.0
   rxdart: ^0.28.0
-  audioplayers: ^6.1.0
+  just_audio: ^0.10.0
+  just_audio_background: ^0.0.1-beta.17
   flutter_launcher_icons: ^0.14.3
+  timezone: ^0.10.0
+  qcf_quran_plus: ^0.0.8
+  scrollable_positioned_list: ^0.3.8
 
 flutter_launcher_icons:
     android: "launcher_icon"

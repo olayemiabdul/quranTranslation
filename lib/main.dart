@@ -9,38 +9,32 @@ import 'firebase_options.dart';
 
 
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 
 
 
 
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'azan/azan_service.dart';
+import 'quran_byPage/quran_pages.dart' show bootQcfFonts;
+import 'constant.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.dark);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  tz.initializeTimeZones();
-
-  const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
-    requestAlertPermission: true,
-    requestBadgePermission: true,
-    requestSoundPermission: true,
-  );
-
-  const InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: initializationSettingsIOS,
-  );
-
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // One place owns notifications now (see azan/azan_service.dart).
+  await AzanService.instance.init();
+  // Refresh the week of adhan alarms in the background on every launch.
+  unawaited(AzanService.instance.rescheduleFromSaved());
+  // Unpack/load the Madinah Mushaf page fonts in the background.
+  unawaited(bootQcfFonts());
+  // Drop the caches of readers that have been replaced. Not awaited, so it
+  // never delays the first frame.
+  unawaited(_cleanUpLegacyCaches());
 
   // Add error handling for Firebase initialization
   try {
@@ -50,8 +44,17 @@ void main() async {
       );
     }
   } catch (e) {
-
+    debugPrint('Firebase initialization failed: $e');
   }
+
+  // Lock-screen, notification and headphone controls for recitation. Must
+  // run before the first AudioPlayer is created.
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'tunedtech.uk.quranCompleteUi.audio',
+    androidNotificationChannelName: 'Quran recitation',
+    androidNotificationOngoing: true,
+    androidStopForegroundOnPause: true,
+  );
 
   runApp(ChangeNotifierProvider(
     create: (_) => ThemeNotifier(),
@@ -59,6 +62,32 @@ void main() async {
   ));
 }
 
+/// The old Urdu reader cached the whole Urdu Quran under
+/// 'UrduTranslationData', the old Translation reader under
+/// 'translationData', the old page-by-page reader (replaced by the Mushaf)
+/// under 'quranPageData', and the old Study reader two more full copies
+/// under 'quranArabicData' and 'quranEnglishData'. Nothing reads them any more, but they sit
+/// in SharedPreferences, which is loaded into memory whole on every launch.
+Future<void> _cleanUpLegacyCaches() async {
+  try {
+    final p = await SharedPreferences.getInstance();
+    // v3 adds the Study reader's keys, so phones that already ran v2 still
+    // drop them.
+    if (p.getBool('legacy_cache_cleared_v3') == true) return;
+    for (final key in const [
+      'quranArabicData',
+      'quranEnglishData',
+      'UrduTranslationData',
+      'translationData',
+      'quranPageData',
+    ]) {
+      await p.remove(key);
+    }
+    await p.setBool('legacy_cache_cleared_v3', true);
+  } catch (e) {
+    debugPrint('Legacy cache cleanup failed: $e');
+  }
+}
 
 class CompleteQuranApp extends StatelessWidget {
   const CompleteQuranApp({super.key});
@@ -76,9 +105,11 @@ class CompleteQuranApp extends StatelessWidget {
           theme: ThemeData.light(
 
           ),
-          darkTheme: ThemeData.light(),
+          // A real dark theme, so default text, sheets and dialogs follow
+          // ThemeNotifier instead of staying light in night mode.
+          darkTheme: _darkTheme,
           themeMode: themeMode, // Set the theme based on the ValueNotifier
-          home:ShowUpAnimation(child:const CoverPageDetail(),), // Main screen widget
+          home:const ShowUpAnimation(child:CoverPageDetail(),), // Main screen widget
         );
       },
     );
@@ -87,12 +118,29 @@ class CompleteQuranApp extends StatelessWidget {
 
 
 
+final ThemeData _darkTheme = () {
+  final base = ThemeData.dark();
+  return base.copyWith(
+    // A step lighter than backGroundColor, which the home cards use.
+    scaffoldBackgroundColor: const Color(0xFF1E1B27),
+    canvasColor: const Color(0xFF1E1B27),
+    colorScheme: base.colorScheme.copyWith(
+      primary: selectionColor,
+      secondary: Colors.amber,
+      surface: const Color(0xFF262233),
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: homeContainerColor,
+      foregroundColor: Colors.white,
+    ),
+  );
+}();
+
 class ShowUpAnimation extends StatefulWidget {
   final Widget child;
+  final int? delay;
 
-  int? delay;
-
-  ShowUpAnimation({super.key, required this.child, this.delay});
+  const ShowUpAnimation({super.key, required this.child, this.delay});
 
   @override
   _ShowUpAnimationState createState() => _ShowUpAnimationState();
@@ -106,7 +154,7 @@ class _ShowUpAnimationState extends State<ShowUpAnimation>
   late Animation<Offset> animOffset;
 
   /// CREATING THE TIMER VARIABLE
-  late Timer timer;
+  Timer? timer;
 
   @override
   void initState() {
@@ -130,9 +178,9 @@ class _ShowUpAnimationState extends State<ShowUpAnimation>
 
   @override
   void dispose() {
-    super.dispose();
+    timer?.cancel(); // was 'late' and crashed when no delay was set
     animController.dispose();
-    timer.cancel();
+    super.dispose();
   }
 
   @override

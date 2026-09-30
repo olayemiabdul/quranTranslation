@@ -24,13 +24,15 @@ class _ContactUsPageState extends State<ContactUsPage> {
           'message': messageController.text,
           'timestamp': FieldValue.serverTimestamp(),
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks! Message sent successfully!')),
-        );
         nameController.clear();
         emailController.clear();
         messageController.clear();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Thanks! Message sent successfully!')),
+        );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to send message: $e')),
         );
@@ -38,8 +40,13 @@ class _ContactUsPageState extends State<ContactUsPage> {
     }
   }
 
+  // A fixed light design: pin the light theme so a dark app theme cannot
+  // turn its default-coloured text white on these light surfaces.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Theme(data: ThemeData.light(), child: Builder(builder: _buildLight));
+
+  Widget _buildLight(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
 
 
