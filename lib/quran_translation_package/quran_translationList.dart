@@ -220,7 +220,9 @@ class _QuranTranslationListPageState extends State<QuranTranslationListPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Downloading $_editionLabel',
+              // The edition being fetched, not the one it replaces: on the
+              // Urdu tile's first open those differ.
+              Text('Downloading ${_labelFor(_pending ?? _prefs.edition)}',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 17, color: t.ink)),
               const SizedBox(height: 6),

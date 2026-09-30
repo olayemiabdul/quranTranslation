@@ -26,7 +26,7 @@ class TranslationTypography {
   static bool isRtl(String edition) => rtlLanguages.contains(languageOf(edition));
 
   /// The family name for an edition's script, or null to keep the default.
-  static String? _familyFor(String edition, {required bool serif}) {
+  static String? familyFor(String edition, {required bool serif}) {
     switch (languageOf(edition)) {
       case 'ur':
         // Urdu is written in nastaliq. Nothing else is right.
@@ -74,7 +74,7 @@ class TranslationTypography {
       color: color,
     );
 
-    final family = _familyFor(edition, serif: serif);
+    final family = familyFor(edition, serif: serif);
     try {
       if (family != null) return GoogleFonts.getFont(family, textStyle: base);
       return serif

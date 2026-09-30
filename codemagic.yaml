@@ -1,40 +1,210 @@
+# Universal Quran — Codemagic
+#
+# Two workflows, because Android and iOS want different machines and
+# different signing. The Android one can run on Linux, which is faster and
+# cheaper than a Mac.
+#
+# What was wrong with the previous single workflow:
+#
+#  * `flutter build ios --release --no-codesign` produces a `.app`, never an
+#    `.ipa`, so the artifact path `build/ios/ipa/*.ipa` could never match.
+#    The build passed and produced no iOS output at all. An IPA needs real
+#    signing: `flutter build ipa` with an export options plist.
+#  * `flutter pub upgrade` ran on every build, so no two builds used the same
+#    dependency set and a plugin release could break CI overnight with no
+#    code change. Use `pub get` and commit pubspec.lock.
+#  * Nothing set the build number, so Play and App Store would both reject
+#    the second upload as a duplicate.
+#  * The Android keystore env vars were never turned into `key.properties`,
+#    which is what `android/app/build.gradle` actually reads. The release
+#    build would have failed to sign.
+#  * `flutter build apk` — Play needs an `.aab` for uploads.
+#  * No `triggering`, so nothing ran on push.
+#  * No caching, so every build re-downloaded the world.
+
+definitions:
+  cache_flutter: &cache_flutter
+    cache_paths:
+      - $HOME/.pub-cache
+      - $HOME/.gradle/caches
+      - $FLUTTER_ROOT/.pub-cache
+
+  email_me: &email_me
+    email:
+      recipients:
+        - olayemi.abdullahi9585@gmail.com
+      notify:
+        success: true
+        failure: true
+
 workflows:
-  default-workflow:
-    name: Build and Test QuranCompleteUI
-    max_build_duration: 60 # 1 hour maximum build duration
+  # ---------------------------------------------------------------- Android
+  android-release:
+    name: Android — release bundle
+    max_build_duration: 90
+    instance_type: linux_x2
 
     environment:
       flutter: stable
-      xcode: 16.1
-      cocoapods: default
+      java: 17
+      android_signing:
+        # Upload your keystore in Codemagic under
+        # Teams > Code signing identities > Android keystores,
+        # and give it exactly this reference name.
+        - quran_upload_keystore
       vars:
-        ANDROID_KEYSTORE_PATH: $CM_ANDROID_KEYSTORE_PATH
-        ANDROID_KEYSTORE_PASSWORD: $CM_ANDROID_KEYSTORE_PASSWORD
-        ANDROID_KEY_ALIAS: $CM_ANDROID_KEY_ALIAS
-        ANDROID_KEY_PASSWORD: $CM_ANDROID_KEY_PASSWORD
+        PACKAGE_NAME: "tunedtech.uk.quranCompleteUi"
+        # Bump this when you cut a release. The build number is automatic.
+        BUILD_NAME: "2.0.0"
+
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: master
+          include: true
+          source: true
+
+    cache:
+      <<: *cache_flutter
 
     scripts:
-      - name: Install dependencies
+      - name: Build number
         script: |
-          flutter pub get
-          flutter pub upgrade
-          cd ios
-          pod install 
+          # Production is on versionCode 10, so start above it. Codemagic's
+          # PROJECT_BUILD_NUMBER increments on every build of this workflow.
+          echo "BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 10))" >> $CM_ENV
 
-      - name: Run Tests
-        script: flutter test
+      - name: Write key.properties
+        script: |
+          # android/app/build.gradle reads this file. Codemagic's
+          # android_signing block gives us the CM_KEYSTORE_* values.
+          cat > "$CM_BUILD_DIR/android/key.properties" <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
 
-      - name: Build APK
-        script: flutter build apk --release
+      - name: Dependencies
+        # pub get only. Never pub upgrade in CI.
+        script: flutter pub get
 
-      - name: Build iOS App
-        script: flutter build ios --release --no-codesign
+      - name: Analyze
+        script: flutter analyze --no-fatal-infos
+
+      - name: Test
+        script: |
+          # Passes cleanly when there are no tests yet, instead of failing
+          # the build. Delete the guard once you have real tests.
+          if [ -d test ] && [ -n "$(find test -name '*_test.dart' 2>/dev/null)" ]; then
+            flutter test
+          else
+            echo "No tests found — skipping."
+          fi
+
+      - name: Build app bundle
+        script: |
+          flutter build appbundle --release \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER
+
+      - name: Confirm the target SDK
+        script: |
+          # Play rejected the last upload for targeting 34. Fail here rather
+          # than after a manual upload.
+          grep -q "targetSdk\(Version\)\? 35" android/app/build.gradle \
+            || { echo "targetSdk is not 35 — Play will reject this."; exit 1; }
 
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
-      - build/ios/ipa/*.ipa # Adjusted path for iOS IPA file
+      - build/**/outputs/bundle/**/*.aab
+      # Keep the mapping file: Play needs it to read crash reports.
+      - build/**/outputs/mapping/**/mapping.txt
 
     publishing:
-      email:
-        recipients:
-          - olayemi.abdullahi9585@gmail.com
+      <<: *email_me
+      # Uncomment once you have a Google Play service account JSON saved in
+      # Codemagic. Until then, download the AAB from the email and upload it
+      # by hand.
+      #
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal
+      #   submit_as_draft: true
+
+  # -------------------------------------------------------------------- iOS
+  ios-release:
+    name: iOS — App Store build
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      # Create this in Codemagic under
+      # Teams > Integrations > Apple Developer Portal,
+      # using an App Store Connect API key. Name it exactly this.
+      app_store_connect: quran_app_store_connect
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        # Must match the bundle identifier in ios/Runner.xcodeproj —
+        # NOT the `ios:` block in pubspec.yaml, which Flutter ignores.
+        bundle_identifier: tunedtech.uk.quranCompleteUi
+      vars:
+        BUILD_NAME: "2.0.0"
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/Library/Caches/CocoaPods
+
+    scripts:
+      - name: Build number
+        script: |
+          echo "BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 10))" >> $CM_ENV
+
+      - name: Dependencies
+        script: |
+          flutter pub get
+          # Generated.xcconfig has to exist before pod install, or CocoaPods
+          # cannot resolve the Flutter pods.
+          flutter precache --ios
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Code signing
+        # Fetches the provisioning profiles and writes
+        # /Users/builder/export_options.plist for the build below.
+        script: xcode-project use-profiles
+
+      - name: Build IPA
+        script: |
+          flutter build ipa --release \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/archive/*.xcarchive
+
+    publishing:
+      <<: *email_me
+      # Uncomment to send each build to TestFlight automatically.
+      #
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: true
+      #   beta_groups:
+      #     - Internal testers
