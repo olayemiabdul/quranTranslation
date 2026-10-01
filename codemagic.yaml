@@ -1,26 +1,39 @@
 # Universal Quran — Codemagic
 #
 # Two workflows, because Android and iOS want different machines and
-# different signing. The Android one can run on Linux, which is faster and
+# different signing. The Android one runs on Linux, which is faster and
 # cheaper than a Mac.
 #
-# What was wrong with the previous single workflow:
+# ---------------------------------------------------------------------------
+# Changes in this revision, after the first real iOS run
+# ---------------------------------------------------------------------------
+#
+#  * BUILD NUMBER. The offset was `PROJECT_BUILD_NUMBER + 10`, which yields
+#    exactly 10 on a fresh counter — and 10 is already taken on BOTH stores
+#    (Play versionCode 10, App Store Connect CFBundleVersion 10). The upload
+#    was rejected with ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE. The offset is
+#    now 100, and iOS asks App Store Connect for the real number when it can.
+#
+#  * APPLICATION ID. `PACKAGE_NAME` said `tunedtech.uk.quranCompleteUi`. The
+#    live app on Play is `com.tunedtech.quran_complete_ui`. The Android
+#    workflow now FAILS EARLY if build.gradle drifts from the Play id again,
+#    rather than after a rejected upload.
+#
+#  * TESTFLIGHT. The App Store Connect publishing block is enabled, since the
+#    last run was already trying to upload.
+#
+# Earlier fixes, kept:
 #
 #  * `flutter build ios --release --no-codesign` produces a `.app`, never an
-#    `.ipa`, so the artifact path `build/ios/ipa/*.ipa` could never match.
-#    The build passed and produced no iOS output at all. An IPA needs real
+#    `.ipa`, so the old artifact path could never match. An IPA needs real
 #    signing: `flutter build ipa` with an export options plist.
 #  * `flutter pub upgrade` ran on every build, so no two builds used the same
-#    dependency set and a plugin release could break CI overnight with no
-#    code change. Use `pub get` and commit pubspec.lock.
-#  * Nothing set the build number, so Play and App Store would both reject
-#    the second upload as a duplicate.
-#  * The Android keystore env vars were never turned into `key.properties`,
-#    which is what `android/app/build.gradle` actually reads. The release
-#    build would have failed to sign.
-#  * `flutter build apk` — Play needs an `.aab` for uploads.
-#  * No `triggering`, so nothing ran on push.
-#  * No caching, so every build re-downloaded the world.
+#    dependency set. `pub get` only; commit pubspec.lock.
+#  * The Android keystore env vars were never written to `key.properties`,
+#    which is what android/app/build.gradle actually reads.
+#  * `flutter build apk` — Play needs an `.aab`.
+#  * No `triggering`, so nothing ran on push. No caching, so every build
+#    re-downloaded the world.
 
 definitions:
   cache_flutter: &cache_flutter
@@ -48,13 +61,14 @@ workflows:
       flutter: stable
       java: 17
       android_signing:
-        # Upload your keystore in Codemagic under
-        # Teams > Code signing identities > Android keystores,
-        # and give it exactly this reference name.
+        # Upload the SAME keystore the live app was signed with, under
+        # Teams > Code signing identities > Android keystores, named exactly
+        # this. A different key means Play rejects the update permanently.
         - quran_upload_keystore
       vars:
-        PACKAGE_NAME: "tunedtech.uk.quranCompleteUi"
-        # Bump this when you cut a release. The build number is automatic.
+        # The package name on Play. This is permanent — a different value is
+        # a different app, with none of the existing installs or reviews.
+        PACKAGE_NAME: "com.tunedtech.quran_complete_ui"
         BUILD_NAME: "2.0.0"
 
     triggering:
@@ -70,16 +84,30 @@ workflows:
       <<: *cache_flutter
 
     scripts:
+      - name: Check the application id and target SDK
+        script: |
+          # Both of these have already cost an upload. Fail in thirty seconds
+          # rather than after a build and a manual upload.
+          grep -q "applicationId \"$PACKAGE_NAME\"" android/app/build.gradle || {
+            echo "applicationId does not match $PACKAGE_NAME — Play will reject this."
+            grep -n "applicationId" android/app/build.gradle
+            exit 1
+          }
+          grep -qE "targetSdk(Version)? 3[5-9]" android/app/build.gradle || {
+            echo "targetSdk is below 35 — Play will reject this."
+            exit 1
+          }
+
       - name: Build number
         script: |
-          # Production is on versionCode 10, so start above it. Codemagic's
-          # PROJECT_BUILD_NUMBER increments on every build of this workflow.
-          echo "BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 10))" >> $CM_ENV
+          # Play is on versionCode 10. PROJECT_BUILD_NUMBER increments on
+          # every Codemagic build, so +100 clears it with room to spare.
+          echo "BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 100))" >> $CM_ENV
 
       - name: Write key.properties
         script: |
-          # android/app/build.gradle reads this file. Codemagic's
-          # android_signing block gives us the CM_KEYSTORE_* values.
+          # android/app/build.gradle reads this file. The android_signing
+          # block above gives us the CM_KEYSTORE_* values.
           cat > "$CM_BUILD_DIR/android/key.properties" <<EOF
           storePassword=$CM_KEYSTORE_PASSWORD
           keyPassword=$CM_KEY_PASSWORD
@@ -96,8 +124,8 @@ workflows:
 
       - name: Test
         script: |
-          # Passes cleanly when there are no tests yet, instead of failing
-          # the build. Delete the guard once you have real tests.
+          # Passes cleanly when there are no tests yet, instead of failing the
+          # build. Drop the guard once there are real tests.
           if [ -d test ] && [ -n "$(find test -name '*_test.dart' 2>/dev/null)" ]; then
             flutter test
           else
@@ -106,27 +134,21 @@ workflows:
 
       - name: Build app bundle
         script: |
+          echo "Building $BUILD_NAME ($BUILD_NUMBER)"
           flutter build appbundle --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER
 
-      - name: Confirm the target SDK
-        script: |
-          # Play rejected the last upload for targeting 34. Fail here rather
-          # than after a manual upload.
-          grep -q "targetSdk\(Version\)\? 35" android/app/build.gradle \
-            || { echo "targetSdk is not 35 — Play will reject this."; exit 1; }
-
     artifacts:
       - build/**/outputs/bundle/**/*.aab
-      # Keep the mapping file: Play needs it to read crash reports.
+      # Keep the mapping file: Play needs it to deobfuscate crash reports.
       - build/**/outputs/mapping/**/mapping.txt
 
     publishing:
       <<: *email_me
-      # Uncomment once you have a Google Play service account JSON saved in
+      # Uncomment once a Google Play service account JSON is saved in
       # Codemagic. Until then, download the AAB from the email and upload it
-      # by hand.
+      # by hand to internal testing.
       #
       # google_play:
       #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
@@ -140,9 +162,8 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      # Create this in Codemagic under
-      # Teams > Integrations > Apple Developer Portal,
-      # using an App Store Connect API key. Name it exactly this.
+      # Teams > Integrations > Apple Developer Portal, using an App Store
+      # Connect API key, named exactly this.
       app_store_connect: quran_app_store_connect
 
     environment:
@@ -151,11 +172,15 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        # Must match the bundle identifier in ios/Runner.xcodeproj —
-        # NOT the `ios:` block in pubspec.yaml, which Flutter ignores.
+        # Matches ios/Runner.xcodeproj. NOT the `ios:` block in pubspec.yaml,
+        # which Flutter ignores entirely. iOS and Android ids need not match.
         bundle_identifier: tunedtech.uk.quranCompleteUi
       vars:
         BUILD_NAME: "2.0.0"
+        # App Store Connect > your app > App Information > Apple ID. A number
+        # like 1234567890. Set it and the build number tracks the store
+        # exactly; leave it empty and the offset below is used instead.
+        APP_STORE_APP_ID: ""
 
     triggering:
       events:
@@ -172,7 +197,22 @@ workflows:
     scripts:
       - name: Build number
         script: |
-          echo "BUILD_NUMBER=$((PROJECT_BUILD_NUMBER + 10))" >> $CM_ENV
+          # CFBundleVersion 10 is already uploaded, so never produce 10 again.
+          NEXT=$((PROJECT_BUILD_NUMBER + 100))
+
+          # Ask App Store Connect for the real latest when we can. Written so
+          # a missing id or a failed call falls back instead of breaking the
+          # build.
+          if [ -n "$APP_STORE_APP_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo "")
+            case "$LATEST" in
+              ''|*[!0-9]*) echo "Could not read the latest build number — using the offset." ;;
+              *) NEXT=$((LATEST + 1)) ;;
+            esac
+          fi
+
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
 
       - name: Dependencies
         script: |
@@ -189,6 +229,7 @@ workflows:
 
       - name: Build IPA
         script: |
+          echo "Building $BUILD_NAME ($BUILD_NUMBER)"
           flutter build ipa --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
@@ -201,10 +242,12 @@ workflows:
 
     publishing:
       <<: *email_me
-      # Uncomment to send each build to TestFlight automatically.
-      #
-      # app_store_connect:
-      #   auth: integration
-      #   submit_to_testflight: true
-      #   beta_groups:
-      #     - Internal testers
+      app_store_connect:
+        auth: integration
+        # Goes to TestFlight, not to review. Promote to the App Store by hand
+        # once it has actually been used on a device.
+        submit_to_testflight: true
+        submit_to_app_store: false
+        # Uncomment and name a group once one exists in App Store Connect.
+        # beta_groups:
+        #   - Internal testers
