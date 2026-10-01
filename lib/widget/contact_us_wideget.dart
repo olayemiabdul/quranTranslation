@@ -1,6 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+// TODO: confirm the support inbox before release.
+const String _supportEmail = 'support@example.com';
+const String _subject = 'Universal Quran feedback';
 
 class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
@@ -15,29 +20,59 @@ class _ContactUsPageState extends State<ContactUsPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
 
+  @override
+  void dispose() {
+    messageController.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
+
+  String get _body => '${messageController.text}\n\n'
+      '— ${nameController.text} <${emailController.text}>';
+
+  // Hands the message to the user's mail app. If there is none, the message
+  // is copied to the clipboard and the address shown so it can be sent by hand.
   Future<void> sendMessage() async {
-    if (formKey.currentState!.validate()) {
-      try {
-        await FirebaseFirestore.instance.collection('contact_messages').add({
-          'name': nameController.text,
-          'email': emailController.text,
-          'message': messageController.text,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-        nameController.clear();
-        emailController.clear();
-        messageController.clear();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks! Message sent successfully!')),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
-        );
-      }
+    if (!formKey.currentState!.validate()) return;
+    final uri = Uri(
+      scheme: 'mailto',
+      path: _supportEmail,
+      // Built by hand: Uri's queryParameters encodes spaces as '+', which
+      // most mail apps show literally.
+      query: 'subject=${Uri.encodeComponent(_subject)}'
+          '&body=${Uri.encodeComponent(_body)}',
+    );
+    bool opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+    if (!mounted) return;
+    if (opened) {
+      nameController.clear();
+      emailController.clear();
+      messageController.clear();
+      return;
     }
+    await Clipboard.setData(
+        ClipboardData(text: 'To: $_supportEmail\nSubject: $_subject\n\n$_body'));
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No email app found'),
+        content: const SelectableText(
+          'Your message has been copied to the clipboard. '
+          'Please paste it into an email to $_supportEmail.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   // A fixed light design: pin the light theme so a dark app theme cannot
@@ -139,7 +174,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                   const SizedBox(height: 20),
                   SizedBox(
                     height: 50,
-                    width: 150,
+                    width: 180,
                     child: TextButton(
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white,
@@ -149,7 +184,8 @@ class _ContactUsPageState extends State<ContactUsPage> {
                         ),
                       ),
                       onPressed: sendMessage,
-                      child: const Text('Send', style: TextStyle(fontSize: 16)),
+                      child: const Text('Open in email',
+                          style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],

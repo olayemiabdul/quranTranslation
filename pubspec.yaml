@@ -35,7 +35,6 @@ dependencies:
 
   geocoding: ^5.0.0
   geocode: ^1.0.3
-  cloud_firestore: ^4.14.0
   share_plus: ^13.3.0
 
   email_validator: ^2.1.17
