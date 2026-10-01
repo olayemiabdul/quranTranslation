@@ -177,18 +177,7 @@ class _PrayerTimePageState extends State<PrayerTimePage> with WidgetsBindingObse
             const SizedBox(height: 20),
             _methodPicker(),
             const SizedBox(height: 12),
-            // OutlinedButton.icon(
-            //   style: OutlinedButton.styleFrom(foregroundColor: _green),
-            //   icon: const Icon(Icons.volume_up),
-            //   label: const Text('Test adhan in 1 minute'),
-            //   onPressed: () async {
-            //     await _svc.testIn();
-            //     if (!mounted) return;
-            //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            //       content: Text('Lock your phone. The adhan should play in about a minute.'),
-            //     ));
-            //   },
-            // ),
+
           ],
         ),
       ),
